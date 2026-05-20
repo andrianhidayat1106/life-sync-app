@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lifesync_app/core/widgets/header.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class TaskView extends StatelessWidget {
@@ -15,8 +16,14 @@ class TaskView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Section
-              _buildHeader(),
-              const SizedBox(height: 24),
+              Padding(
+                padding: EdgeInsetsGeometry.only(
+                  bottom: 24,
+                  left: 24,
+                  right: 24,
+                ),
+                child: Header(title: "Andrian Hidayat"),
+              ),
 
               // Calendar Navigation with "Hari Ini" Reset
               _buildCalendarNav(),

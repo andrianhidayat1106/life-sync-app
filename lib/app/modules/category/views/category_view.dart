@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:lifesync_app/core/widgets/custom_app_bar.dart';
+import 'package:lifesync_app/core/widgets/header.dart';
 import '../../../../core/constants/app_colors.dart';
 
 class CategoryView extends StatelessWidget {
@@ -15,7 +17,7 @@ class CategoryView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Custom Header / TopBar
-              _buildHeader(),
+              Header(title: "Andrian Hidayat"),
               const SizedBox(height: 24),
 
               // Title Section
@@ -45,7 +47,6 @@ class CategoryView extends StatelessWidget {
               // Income Streams Section
               _buildSectionHeader(
                 'Income Streams',
-                '4 Active',
                 const Color(0xFFE0F7F1),
                 const Color(0xFF10B981),
                 Icons.trending_up,
@@ -78,7 +79,6 @@ class CategoryView extends StatelessWidget {
               // Expense Categories Section
               _buildSectionHeader(
                 'Expense Categories',
-                '8 Active',
                 const Color(0xFFFEE2E2),
                 const Color(0xFFEF4444),
                 Icons.trending_down,
@@ -115,41 +115,6 @@ class CategoryView extends StatelessWidget {
           ),
         ),
       ),
-      // Floating Action Button as in previous designs
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF065F46),
-        child: const Icon(Icons.palette_outlined, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Icon(Icons.menu, color: AppColors.textPrimary),
-        const Text(
-          'Life Sync',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        Row(
-          children: [
-            const Icon(Icons.search, color: AppColors.textPrimary),
-            const SizedBox(width: 16),
-            const CircleAvatar(
-              radius: 18,
-              backgroundImage: NetworkImage(
-                'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-              ),
-            ),
-          ],
-        ),
-      ],
     );
   }
 
@@ -267,7 +232,6 @@ class CategoryView extends StatelessWidget {
 
   Widget _buildSectionHeader(
     String title,
-    String badge,
     Color badgeBg,
     Color badgeText,
     IconData icon,
@@ -292,21 +256,6 @@ class CategoryView extends StatelessWidget {
           ),
         ),
         const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: badgeBg,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            badge,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: badgeText,
-            ),
-          ),
-        ),
       ],
     );
   }

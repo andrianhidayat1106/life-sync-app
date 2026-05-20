@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/custom_app_bar.dart';
 
 class NotificationView extends StatelessWidget {
   const NotificationView({super.key});
@@ -8,7 +9,7 @@ class NotificationView extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      appBar: _buildAppBar(context),
+      appBar: CustomAppBar(title: "Notifikasi"),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -75,43 +76,6 @@ class NotificationView extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
-        backgroundColor: Colors.black,
-        icon: const Icon(Icons.done_all, color: Colors.white),
-        label: const Text(
-          'Tandai Semua Dibaca',
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: const Text(
-        'Notifikasi',
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          fontSize: 20,
-          color: AppColors.textPrimary,
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () {},
-          child: const Text(
-            'Hapus Semua',
-            style: TextStyle(
-              color: Color(0xFFB91C1C),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-      ],
-      backgroundColor: Colors.transparent,
-      elevation: 0,
     );
   }
 

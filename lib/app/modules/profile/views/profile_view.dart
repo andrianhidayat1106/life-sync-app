@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lifesync_app/core/widgets/custom_app_bar.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/header.dart';
 
 class ProfileView extends StatelessWidget {
   const ProfileView({super.key});
@@ -7,6 +9,7 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: CustomAppBar(title: "Profil"),
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -15,7 +18,6 @@ class ProfileView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // Custom Header / Top Bar
-              _buildTopBar(),
               const SizedBox(height: 40),
 
               // Profile Image & Name Section

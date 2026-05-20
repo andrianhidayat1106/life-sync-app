@@ -73,12 +73,12 @@ class MainView extends GetView<MainController> {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.assignment_outlined),
                   activeIcon: Icon(Icons.assignment),
-                  label: 'Proyek',
+                  label: 'Task',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.task),
                   activeIcon: Icon(Icons.task),
-                  label: 'Task',
+                  label: 'Proyek',
                 ),
               ],
             ),

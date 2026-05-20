@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:lifesync_app/app/modules/project/views/project_create_view.dart';
 
 import '../modules/category/bindings/category_binding.dart';
 import '../modules/category/bindings/category_binding.dart';
@@ -28,7 +29,7 @@ part 'app_routes.dart';
 class AppPages {
   AppPages._();
 
-  static const INITIAL = Routes.NOTIFICATION;
+  static const INITIAL = Routes.MAIN;
 
   static final routes = [
     GetPage(
@@ -72,6 +73,9 @@ class AppPages {
       name: _Paths.PROJECT,
       page: () => const ProjectView(),
       binding: ProjectBinding(),
+      children: [
+        GetPage(name: '/create', page: () => const CreateProjectView()),
+      ],
     ),
     GetPage(
       name: _Paths.TASK,

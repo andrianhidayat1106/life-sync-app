@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:lifesync_app/app/routes/app_pages.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/header.dart';
 
 class HomeView extends StatelessWidget {
   const HomeView({super.key});
@@ -9,36 +12,62 @@ class HomeView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Section
-              _buildHeader(),
-              const SizedBox(height: 24),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                child: Column(
+                  children: [
+                    Header(title: "Andrian Hidayat"),
+                    const SizedBox(height: 24),
 
-              // Consolidated Balance Card
-              _buildBalanceCard(),
-              const SizedBox(height: 32),
+                    // Consolidated Balance Card
+                    _buildBalanceCard(),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsetsGeometry.only(left: 24),
+                child: Column(
+                  children: [
+                    _buildSectionHeader('Proyek Aktif', 'Lihat Semua', () {}),
+                    const SizedBox(height: 16),
+                    _buildProjectCarousel(),
+                    const SizedBox(height: 32),
+                  ],
+                ),
+              ),
 
-              // Active Projects Section
-              _buildSectionHeader('Proyek Aktif', 'Lihat Semua', () {}),
-              const SizedBox(height: 16),
-              _buildProjectCarousel(),
-              const SizedBox(height: 32),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                child: Column(
+                  children: [
+                    // Today's Tasks Section
+                    _buildSectionHeader(
+                      'Tugas Hari Ini',
+                      'Kelola Tugas',
+                      () {},
+                    ),
+                    const SizedBox(height: 16),
+                    _buildTaskList(),
+                    const SizedBox(height: 32),
 
-              // Today's Tasks Section
-              _buildSectionHeader('Tugas Hari Ini', 'Kelola Tugas', () {}),
-              const SizedBox(height: 16),
-              _buildTaskList(),
-              const SizedBox(height: 32),
-
-              // Recent Activity Section
-              _buildSectionHeader('Aktivitas Terakhir', 'Lihat Semua', () {}),
-              const SizedBox(height: 16),
-              _buildRecentActivityList(),
-              const SizedBox(height: 80), // Padding for bottom nav
+                    // Recent Activity Section
+                    _buildSectionHeader(
+                      'Aktivitas Terakhir',
+                      'Lihat Semua',
+                      () {},
+                    ),
+                    const SizedBox(height: 16),
+                    _buildRecentActivityList(),
+                    const SizedBox(height: 80), // Padding for bottom nav
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -60,7 +89,7 @@ class HomeView extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Text(
-              'Harmoni Hidup',
+              'Andrian Hidayat',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -144,7 +173,7 @@ class HomeView extends StatelessWidget {
               _buildChartBar(50, Colors.tealAccent.withOpacity(0.4)),
               _buildChartBar(35, Colors.tealAccent.withOpacity(0.4)),
               _buildChartBar(60, Colors.tealAccent.withOpacity(0.4)),
-              _buildChartBar(90, const Color(0xFF0C54BE)),
+              _buildChartBar(90, const Color(0xFF065F46)),
               _buildChartBar(55, Colors.tealAccent.withOpacity(0.4)),
               _buildChartBar(65, Colors.tealAccent.withOpacity(0.4)),
             ],
@@ -173,7 +202,7 @@ class HomeView extends StatelessWidget {
               icon: const Icon(Icons.analytics_outlined, size: 18),
               label: const Text('Analisis Detail'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF0C54BE),
+                backgroundColor: const Color(0xFF065F46),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),

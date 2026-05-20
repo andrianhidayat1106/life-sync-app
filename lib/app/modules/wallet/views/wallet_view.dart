@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/widgets/header.dart';
+import 'package:auto_size_text/auto_size_text.dart';
 
 class WalletView extends StatelessWidget {
   const WalletView({super.key});
@@ -9,14 +11,13 @@ class WalletView extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header Section
-              _buildHeader(),
-              const SizedBox(height: 32),
 
               // Title Section
               Padding(
@@ -24,6 +25,8 @@ class WalletView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Header(title: "Andrian Hidayat"),
+                    const SizedBox(height: 32),
                     const Text(
                       'Dompet Saya',
                       style: TextStyle(
@@ -45,7 +48,6 @@ class WalletView extends StatelessWidget {
               ),
               const SizedBox(height: 32),
 
-              // Wallet Carousel (Multi-Wallet)
               _buildWalletCarousel(),
               const SizedBox(height: 16),
               _buildCarouselIndicator(),
@@ -70,7 +72,7 @@ class WalletView extends StatelessWidget {
                     Expanded(
                       child: _buildSummaryCard(
                         'PENGELUARAN',
-                        '- Rp 1.425.000',
+                        '- Rp 15.000.000',
                         'Bulan Oktober 2023',
                         const Color(0xFFFEE2E2),
                         const Color(0xFFEF4444),
@@ -84,11 +86,9 @@ class WalletView extends StatelessWidget {
 
               // Transaction History Section
               _buildTransactionHistory(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 12),
 
               // Quick Action Button
-              _buildQuickActionButton(),
-              const SizedBox(height: 16),
               Center(
                 child: TextButton(
                   onPressed: () {},
@@ -116,6 +116,11 @@ class WalletView extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: Colors.black,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
@@ -165,30 +170,81 @@ class WalletView extends StatelessWidget {
           _buildWalletCard(
             'DOMPET UTAMA',
             'Rp 15.450.000',
-            '**** 4412',
+
             const Color(0xFF1E293B),
-            true,
           ),
           const SizedBox(width: 16),
           _buildWalletCard(
             'TABUNGAN',
             'Rp 10.000.000',
-            '**** 9012',
+
             const Color(0xFF065F46),
-            false,
+          ),
+          const SizedBox(width: 16),
+          GestureDetector(
+            onTap: () {},
+            child: Container(
+              width: 320,
+              height: 200, // Menyesuaikan dengan tinggi rata-rata WalletCard
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: AppColors.outline.withOpacity(0.5),
+                  width: 2,
+                  style: BorderStyle.solid,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.02),
+                    blurRadius: 15,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F7F1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.add_card_outlined,
+                      size: 32,
+                      color: Color(0xFF10B981),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Tambah Dompet Baru',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Kelola sumber dana lainnya',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildWalletCard(
-    String title,
-    String balance,
-    String cardNumber,
-    Color color,
-    bool isMain,
-  ) {
+  Widget _buildWalletCard(String title, String balance, Color color) {
     return Container(
       width: 320,
       padding: const EdgeInsets.all(24),
@@ -197,7 +253,7 @@ class WalletView extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.3),
+            color: color.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -218,25 +274,6 @@ class WalletView extends StatelessWidget {
                   letterSpacing: 1.2,
                 ),
               ),
-              if (isMain)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'UTAMA',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
             ],
           ),
           const Spacer(),
@@ -248,12 +285,15 @@ class WalletView extends StatelessWidget {
               fontWeight: FontWeight.bold,
             ),
           ),
+
+          Divider(),
+
           const SizedBox(height: 24),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                cardNumber,
+                "Total Saldo",
                 style: const TextStyle(color: Colors.white70, fontSize: 14),
               ),
               const Icon(Icons.circle, size: 24, color: Colors.white24),
@@ -311,7 +351,7 @@ class WalletView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.outline.withOpacity(0.5)),
+        border: Border.all(color: AppColors.outline.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,8 +360,11 @@ class WalletView extends StatelessWidget {
             children: [
               Icon(icon, size: 14, color: textColor),
               const SizedBox(width: 6),
-              Text(
+              AutoSizeText(
                 label,
+                minFontSize: 5,
+                overflow: TextOverflow.ellipsis,
+                maxFontSize: 11,
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -331,10 +374,14 @@ class WalletView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Text(
+          AutoSizeText(
             value,
+            minFontSize: 5,
+            maxLines: 1,
+            maxFontSize: 16,
             style: TextStyle(
               fontSize: 16,
+
               fontWeight: FontWeight.bold,
               color: textColor,
             ),
@@ -362,17 +409,17 @@ class WalletView extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Riwayat Transaksi',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            SizedBox(height: 12),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Riwayat Transaksi',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -384,6 +431,25 @@ class WalletView extends StatelessWidget {
                   ),
                   child: const Text(
                     'Semua',
+                    style: TextStyle(
+                      color: Color(0xFF0369A1),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE0F2FE),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Text(
+                    'Pendapatan',
                     style: TextStyle(
                       color: Color(0xFF0369A1),
                       fontSize: 12,
@@ -501,51 +567,6 @@ class WalletView extends StatelessWidget {
             ],
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.black,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: () {},
-            borderRadius: BorderRadius.circular(16),
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_circle_outline, color: Colors.white, size: 20),
-                  SizedBox(width: 12),
-                  Text(
-                    'Catat Transaksi Baru',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }
