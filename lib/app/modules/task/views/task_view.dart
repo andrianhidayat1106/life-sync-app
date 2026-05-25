@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lifesync_app/core/widgets/header.dart';
 import '../../../../core/constants/app_colors.dart';
 
@@ -49,7 +50,9 @@ class TaskView extends StatelessWidget {
       ),
       // Floating Action Button for New Task
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Get.toNamed('/task/create');
+        },
         backgroundColor: Colors.black,
         child: const Icon(Icons.add, color: Colors.white),
       ),

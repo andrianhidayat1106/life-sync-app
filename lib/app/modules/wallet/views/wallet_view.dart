@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:lifesync_app/app/modules/wallet/components/wallet_card_widget.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/header.dart';
 import 'package:auto_size_text/auto_size_text.dart';
@@ -118,7 +120,9 @@ class WalletView extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          Get.toNamed("wallet/transaction/create");
+        },
         backgroundColor: Colors.black,
         child: const Icon(Icons.add, color: Colors.white),
       ),
@@ -167,18 +171,16 @@ class WalletView extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
         children: [
-          _buildWalletCard(
-            'DOMPET UTAMA',
-            'Rp 15.450.000',
-
-            const Color(0xFF1E293B),
+          WalletCardWidget(
+            title: 'DOMPET UTAMA',
+            balance: 'Rp 15.450.000',
+            backgroundColor: const Color(0xFF1E293B),
           ),
           const SizedBox(width: 16),
-          _buildWalletCard(
-            'TABUNGAN',
-            'Rp 10.000.000',
-
-            const Color(0xFF065F46),
+          WalletCardWidget(
+            title: 'TABUNGAN',
+            balance: 'Rp 10.000.000',
+            backgroundColor: const Color(0xFF065F46),
           ),
           const SizedBox(width: 16),
           GestureDetector(
@@ -238,66 +240,6 @@ class WalletView extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWalletCard(String title, String balance, Color color) {
-    return Container(
-      width: 320,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.3),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 1.2,
-                ),
-              ),
-            ],
-          ),
-          const Spacer(),
-          Text(
-            balance,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-
-          Divider(),
-
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                "Total Saldo",
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-              const Icon(Icons.circle, size: 24, color: Colors.white24),
-            ],
           ),
         ],
       ),

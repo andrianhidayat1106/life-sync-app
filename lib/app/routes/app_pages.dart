@@ -1,5 +1,9 @@
 import 'package:get/get.dart';
-import 'package:lifesync_app/app/modules/project/views/project_create_view.dart';
+import 'package:lifesync_app/app/modules/project/views/project_form_view.dart';
+import 'package:lifesync_app/app/modules/project/views/project_view.dart';
+import 'package:lifesync_app/app/modules/task/views/task_form_view.dart';
+import 'package:lifesync_app/app/modules/wallet/views/transaction_form_view.dart';
+import 'package:lifesync_app/app/modules/wallet/views/wallet_form_view.dart';
 
 import '../modules/category/bindings/category_binding.dart';
 import '../modules/category/bindings/category_binding.dart';
@@ -16,7 +20,7 @@ import '../modules/notification/views/notification_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/project/bindings/project_binding.dart';
-import '../modules/project/views/project_view.dart';
+import '../modules/project/views/project_form_view.dart';
 import '../modules/register/bindings/register_binding.dart';
 import '../modules/register/views/register_view.dart';
 import '../modules/task/bindings/task_binding.dart';
@@ -56,6 +60,13 @@ class AppPages {
       name: _Paths.WALLET,
       page: () => const WalletView(),
       binding: WalletBinding(),
+      children: [
+        GetPage(name: '/create', page: () => const WalletFormView()),
+        GetPage(
+          name: '/transaction/create',
+          page: () => const TransactionFormView(),
+        ),
+      ],
     ),
     GetPage(
       name: _Paths.CATEGORY,
@@ -73,14 +84,13 @@ class AppPages {
       name: _Paths.PROJECT,
       page: () => const ProjectView(),
       binding: ProjectBinding(),
-      children: [
-        GetPage(name: '/create', page: () => const CreateProjectView()),
-      ],
+      children: [GetPage(name: '/create', page: () => const ProjectFormView())],
     ),
     GetPage(
       name: _Paths.TASK,
       page: () => const TaskView(),
       binding: TaskBinding(),
+      children: [GetPage(name: '/create', page: () => const TaskFormView())],
     ),
     GetPage(
       name: _Paths.PROFILE,
