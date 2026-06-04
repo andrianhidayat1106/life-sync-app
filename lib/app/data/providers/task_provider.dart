@@ -16,7 +16,8 @@ class TaskProvider {
         .from('tasks')
         .select()
         .eq('user_id', user.id)
-        .order('due_date', ascending: true);
+        .order('due_date', ascending: true)
+        .timeout(const Duration(seconds: 10));
 
     return (response as List)
         .map((json) => TaskModel.fromJson(json as Map<String, dynamic>))

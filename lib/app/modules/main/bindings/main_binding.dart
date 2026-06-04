@@ -10,7 +10,6 @@ class MainBinding extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<MainController>(() => MainController());
-
     Get.lazyPut<ProjectController>(() => ProjectController());
     Get.lazyPut<WalletController>(() => WalletController());
     Get.lazyPut<CategoryController>(() => CategoryController());

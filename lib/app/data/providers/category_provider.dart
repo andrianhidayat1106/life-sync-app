@@ -16,7 +16,8 @@ class CategoryProvider {
         .from('categories')
         .select()
         .eq('user_id', user.id)
-        .order('name', ascending: true);
+        .order('name', ascending: true)
+        .timeout(const Duration(seconds: 10));
 
     final list = (response as List)
         .map((json) => CategoryModel.fromJson(json as Map<String, dynamic>))
