@@ -19,6 +19,7 @@ class TaskController extends GetxController {
   final selectedDate = DateTime.now().obs;
   final selectedCategoryId = ''.obs;
   final weekDays = <DateTime>[].obs;
+  final scrollController = ScrollController();
 
   // Form states & controllers
   final titleController = TextEditingController();
@@ -35,6 +36,14 @@ class TaskController extends GetxController {
     super.onInit();
     updateWeekDays(selectedDate.value);
     loadData();
+  }
+
+  @override
+  void onReady() {
+    super.onReady();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      scrollToSelectedDate();
+    });
   }
 
   Future<void> loadData() async {
@@ -75,6 +84,39 @@ class TaskController extends GetxController {
   void selectDate(DateTime date) {
     selectedDate.value = date;
     updateWeekDays(date);
+    scrollToSelectedDate();
+  }
+
+  void scrollToSelectedDate() {
+    if (!scrollController.hasClients) return;
+    
+    int index = -1;
+    for (int i = 0; i < weekDays.length; i++) {
+      if (isSameDate(weekDays[i], selectedDate.value)) {
+        index = i;
+        break;
+      }
+    }
+    
+    if (index != -1) {
+      double itemWidth = 76.0; // 66 width + 10 margin
+      double screenWidth = Get.width;
+      double listPadding = 20.0; // padding horizontal listview
+      
+      double offset = (index * itemWidth) + listPadding - ((screenWidth - itemWidth) / 2);
+      
+      double maxScroll = scrollController.position.maxScrollExtent;
+      double minScroll = scrollController.position.minScrollExtent;
+      
+      if (offset > maxScroll) offset = maxScroll;
+      if (offset < minScroll) offset = minScroll;
+      
+      scrollController.animateTo(
+        offset,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+    }
   }
 
   Future<void> selectDateFromPicker(BuildContext context) async {
@@ -360,6 +402,7 @@ class TaskController extends GetxController {
   void onClose() {
     titleController.dispose();
     descriptionController.dispose();
+    scrollController.dispose();
     super.onClose();
   }
 }

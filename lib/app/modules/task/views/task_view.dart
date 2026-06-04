@@ -168,6 +168,7 @@ class TaskView extends GetView<TaskController> {
             final List<String> weekdaysShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
             final weekDaysList = controller.weekDays;
             return ListView.builder(
+              controller: controller.scrollController,
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 20),
               itemCount: weekDaysList.length,
