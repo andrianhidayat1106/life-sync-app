@@ -93,12 +93,17 @@ class ProjectView extends GetView<ProjectController> {
 
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 16),
-                        child: _buildProjectCard(
-                          project.name,
-                          project.description ?? 'Tidak ada deskripsi',
-                          progress,
-                          progressLabel,
-                          tasksLabel,
+                        child: GestureDetector(
+                          onTap: () {
+                            print("[ProjectView] Clicked project card: ID = ${project.id}, Name = ${project.name}");
+                          },
+                          child: _buildProjectCard(
+                            project.name,
+                            project.description ?? 'Tidak ada deskripsi',
+                            progress,
+                            progressLabel,
+                            tasksLabel,
+                          ),
                         ),
                       );
                     }).toList(),
@@ -118,6 +123,7 @@ class ProjectView extends GetView<ProjectController> {
       // Floating Action Button
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          print("[ProjectView] Floating Action Button clicked - navigating to /project/create");
           Get.toNamed('/project/create');
         },
         backgroundColor: Colors.black,

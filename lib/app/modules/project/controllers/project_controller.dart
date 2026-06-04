@@ -20,11 +20,13 @@ class ProjectController extends GetxController {
 
   @override
   void onInit() {
+    print("[ProjectController] onInit called");
     super.onInit();
     loadData();
   }
 
   Future<void> loadData() async {
+    print("[ProjectController] loadData started");
     try {
       isLoading.value = true;
       await Future.wait([
@@ -32,7 +34,10 @@ class ProjectController extends GetxController {
         fetchTasks(),
         fetchCategories(),
       ]);
-    } catch (e) {
+      print("[ProjectController] loadData completed successfully. Projects count: ${projects.length}, Tasks count: ${tasks.length}, Categories count: ${categories.length}");
+    } catch (e, stackTrace) {
+      print("[ProjectController] ERROR in loadData: $e");
+      print("[ProjectController] STACKTRACE: $stackTrace");
       Get.rawSnackbar(
         title: 'Gagal Memuat Data',
         message: e.toString().replaceAll('Exception: ', ''),
@@ -44,18 +49,39 @@ class ProjectController extends GetxController {
   }
 
   Future<void> fetchProjects() async {
-    final fetched = await _projectProvider.fetchProjects();
-    projects.assignAll(fetched);
+    print("[ProjectController] fetchProjects started");
+    try {
+      final fetched = await _projectProvider.fetchProjects();
+      projects.assignAll(fetched);
+      print("[ProjectController] fetchProjects success. Fetched ${fetched.length} projects.");
+    } catch (e) {
+      print("[ProjectController] ERROR in fetchProjects: $e");
+      rethrow;
+    }
   }
 
   Future<void> fetchTasks() async {
-    final fetched = await _taskProvider.fetchTasks();
-    tasks.assignAll(fetched);
+    print("[ProjectController] fetchTasks started");
+    try {
+      final fetched = await _taskProvider.fetchTasks();
+      tasks.assignAll(fetched);
+      print("[ProjectController] fetchTasks success. Fetched ${fetched.length} tasks.");
+    } catch (e) {
+      print("[ProjectController] ERROR in fetchTasks: $e");
+      rethrow;
+    }
   }
 
   Future<void> fetchCategories() async {
-    final fetched = await _categoryProvider.fetchAllCategories();
-    categories.assignAll(fetched);
+    print("[ProjectController] fetchCategories started");
+    try {
+      final fetched = await _categoryProvider.fetchAllCategories();
+      categories.assignAll(fetched);
+      print("[ProjectController] fetchCategories success. Fetched ${fetched.length} categories.");
+    } catch (e) {
+      print("[ProjectController] ERROR in fetchCategories: $e");
+      rethrow;
+    }
   }
 
   // Dynamic statistics calculations per project
