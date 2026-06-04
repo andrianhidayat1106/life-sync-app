@@ -24,14 +24,6 @@ class TaskView extends GetView<TaskController> {
     return const Color(0xFF6B7280);
   }
 
-  String _formatTaskTime(String timeStr) {
-    final parts = timeStr.split(':');
-    if (parts.length >= 2) {
-      return '${parts[0]}:${parts[1]} WIB';
-    }
-    return '$timeStr WIB';
-  }
-
   String _formatFinishedAt(DateTime dt) {
     final hour = dt.hour.toString().padLeft(2, '0');
     final minute = dt.minute.toString().padLeft(2, '0');
@@ -429,7 +421,6 @@ class TaskView extends GetView<TaskController> {
               priorityColor: task.priority == 'high'
                   ? Colors.red
                   : (task.priority == 'medium' ? Colors.orange : Colors.blue),
-              time: task.taskTime != null ? _formatTaskTime(task.taskTime!) : null,
               finishedAtText: task.finishedAt != null ? _formatFinishedAt(task.finishedAt!) : null,
             );
           }).toList(),
@@ -449,7 +440,6 @@ class TaskView extends GetView<TaskController> {
     required VoidCallback onEdit,
     String? priority,
     Color? priorityColor,
-    String? time,
     String? finishedAtText,
   }) {
     return Container(
@@ -567,27 +557,6 @@ class TaskView extends GetView<TaskController> {
                             fontSize: 12,
                             color: priorityColor ?? Colors.red,
                             fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-                if (time != null && !isDone) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.access_time,
-                        size: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        time,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],

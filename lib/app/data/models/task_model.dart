@@ -8,7 +8,6 @@ class TaskModel {
   final String priority; // 'low', 'medium', 'high'
   final DateTime? dueDate;
   final bool isCompleted;
-  final String? taskTime; // Format: 'HH:mm:ss'
   final DateTime? createdAt;
   final DateTime? updatedAt;
   final DateTime? finishedAt;
@@ -23,7 +22,6 @@ class TaskModel {
     this.priority = 'medium',
     this.dueDate,
     this.isCompleted = false,
-    this.taskTime,
     this.createdAt,
     this.updatedAt,
     this.finishedAt,
@@ -40,7 +38,6 @@ class TaskModel {
       priority: json['priority']?.toString() ?? 'medium',
       dueDate: json['due_date'] != null ? DateTime.parse(json['due_date'].toString()) : null,
       isCompleted: json['is_completed'] as bool? ?? false,
-      taskTime: json['task_time']?.toString(),
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
       updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,
       finishedAt: json['finished_at'] != null ? DateTime.parse(json['finished_at'].toString()) : null,
@@ -58,7 +55,6 @@ class TaskModel {
       'priority': priority,
       'due_date': dueDate?.toIso8601String(),
       'is_completed': isCompleted,
-      'task_time': taskTime,
       'finished_at': finishedAt?.toIso8601String(),
     };
   }
@@ -73,7 +69,6 @@ class TaskModel {
     String? priority,
     DateTime? dueDate,
     bool? isCompleted,
-    String? taskTime,
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? finishedAt,
@@ -88,7 +83,6 @@ class TaskModel {
       priority: priority ?? this.priority,
       dueDate: dueDate ?? this.dueDate,
       isCompleted: isCompleted ?? this.isCompleted,
-      taskTime: taskTime ?? this.taskTime,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       finishedAt: finishedAt ?? this.finishedAt,

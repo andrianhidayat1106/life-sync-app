@@ -29,7 +29,6 @@ class TaskController extends GetxController {
   final selectedFormCategoryId = ''.obs;
   final selectedPriority = 'medium'.obs; // 'low', 'medium', 'high'
   final selectedFormDueDate = Rx<DateTime?>(null);
-  final selectedFormTime = Rx<TimeOfDay?>(null);
 
   @override
   void onInit() {
@@ -123,7 +122,6 @@ class TaskController extends GetxController {
     }
     selectedPriority.value = 'medium';
     selectedFormDueDate.value = selectedDate.value;
-    selectedFormTime.value = null;
   }
 
   void prepareEditForm(TaskModel task) {
@@ -134,20 +132,6 @@ class TaskController extends GetxController {
     selectedFormCategoryId.value = task.categoryId ?? '';
     selectedPriority.value = task.priority;
     selectedFormDueDate.value = task.dueDate;
-    
-    if (task.taskTime != null) {
-      final parts = task.taskTime!.split(':');
-      if (parts.length >= 2) {
-        selectedFormTime.value = TimeOfDay(
-          hour: int.tryParse(parts[0]) ?? 0,
-          minute: int.tryParse(parts[1]) ?? 0,
-        );
-      } else {
-        selectedFormTime.value = null;
-      }
-    } else {
-      selectedFormTime.value = null;
-    }
   }
 
   Future<void> selectFormDate(BuildContext context) async {
@@ -174,31 +158,6 @@ class TaskController extends GetxController {
     );
     if (picked != null) {
       selectedFormDueDate.value = picked;
-    }
-  }
-
-  Future<void> selectFormTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: selectedFormTime.value ?? TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF065F46),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF065F46)),
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      selectedFormTime.value = picked;
     }
   }
 
@@ -234,12 +193,6 @@ class TaskController extends GetxController {
     try {
       isLoading.value = true;
 
-      String? taskTimeStr;
-      if (selectedFormTime.value != null) {
-        final t = selectedFormTime.value!;
-        taskTimeStr = "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00";
-      }
-
       // Cari status penyelesaian jika dalam mode edit
       final existingTask = isEditMode.value
           ? tasks.firstWhereOrNull((t) => t.id == editTaskId.value)
@@ -254,7 +207,6 @@ class TaskController extends GetxController {
         categoryId: selectedFormCategoryId.value,
         priority: selectedPriority.value,
         dueDate: selectedFormDueDate.value,
-        taskTime: taskTimeStr,
         isCompleted: isCompletedVal,
         finishedAt: finishedAtVal,
       );

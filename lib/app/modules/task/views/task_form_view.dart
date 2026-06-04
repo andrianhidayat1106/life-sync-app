@@ -62,7 +62,6 @@ class TaskFormView extends GetView<TaskController> {
     final month = monthsShort[dt.month - 1];
     final year = dt.year;
     
-    // e.g. Kamis, 24 Okt 2024
     final List<String> days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
     final dayName = days[dt.weekday - 1];
     
@@ -247,37 +246,18 @@ class TaskFormView extends GetView<TaskController> {
               const SizedBox(height: 32),
 
               // Deadline Section
-              _buildLabel('TENGGAT WAKTU & JAM'),
+              _buildLabel('TENGGAT WAKTU'),
               const SizedBox(height: 12),
               Obx(() {
                 final date = controller.selectedFormDueDate.value;
-                final time = controller.selectedFormTime.value;
-
                 final dateText = date != null ? _formatDate(date) : 'Pilih Tenggat Tanggal';
-                final timeText = time != null ? time.format(context) : 'Pilih Jam (Opsional)';
 
-                return Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => controller.selectFormDate(context),
-                        child: _buildDateTimePickerField(
-                          Icons.calendar_today_outlined,
-                          dateText,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => controller.selectFormTime(context),
-                        child: _buildDateTimePickerField(
-                          Icons.access_time,
-                          timeText,
-                        ),
-                      ),
-                    ),
-                  ],
+                return GestureDetector(
+                  onTap: () => controller.selectFormDate(context),
+                  child: _buildDateTimePickerField(
+                    Icons.calendar_today_outlined,
+                    dateText,
+                  ),
                 );
               }),
               const SizedBox(height: 48),
