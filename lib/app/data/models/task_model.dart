@@ -36,11 +36,11 @@ class TaskModel {
       title: json['title']?.toString() ?? '',
       description: json['description']?.toString(),
       priority: json['priority']?.toString() ?? 'medium',
-      dueDate: json['due_date'] != null ? DateTime.parse(json['due_date'].toString()) : null,
+      dueDate: json['due_date'] != null ? DateTime.parse(json['due_date'].toString()).toLocal() : null,
       isCompleted: json['is_completed'] as bool? ?? false,
-      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()) : null,
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()) : null,
-      finishedAt: json['finished_at'] != null ? DateTime.parse(json['finished_at'].toString()) : null,
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at'].toString()).toLocal() : null,
+      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at'].toString()).toLocal() : null,
+      finishedAt: json['finished_at'] != null ? DateTime.parse(json['finished_at'].toString()).toLocal() : null,
     );
   }
 
@@ -53,9 +53,9 @@ class TaskModel {
       'title': title,
       'description': description,
       'priority': priority,
-      'due_date': dueDate?.toIso8601String(),
+      'due_date': dueDate?.toUtc().toIso8601String(),
       'is_completed': isCompleted,
-      'finished_at': finishedAt?.toIso8601String(),
+      'finished_at': finishedAt?.toUtc().toIso8601String(),
     };
   }
 
