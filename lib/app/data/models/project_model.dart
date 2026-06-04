@@ -1,5 +1,5 @@
 class ProjectModel {
-  final String? id;
+  final int? id;
   final String? userId;
   final String name;
   final String? description;
@@ -23,7 +23,7 @@ class ProjectModel {
 
   factory ProjectModel.fromJson(Map<String, dynamic> json) {
     return ProjectModel(
-      id: json['id']?.toString(),
+      id: json['id'] != null ? int.tryParse(json['id'].toString()) ?? json['id'] as int? : null,
       userId: json['user_id']?.toString(),
       name: json['name']?.toString() ?? '',
       description: json['description']?.toString(),
@@ -48,7 +48,7 @@ class ProjectModel {
   }
 
   ProjectModel copyWith({
-    String? id,
+    int? id,
     String? userId,
     String? name,
     String? description,

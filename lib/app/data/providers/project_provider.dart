@@ -83,6 +83,6 @@ class ProjectProvider {
       throw Exception("User tidak terautentikasi");
     }
 
-    await _client.from('projects').delete().eq('id', id);
+    await _client.from('projects').delete().eq('id', int.tryParse(id) ?? id);
   }
 }

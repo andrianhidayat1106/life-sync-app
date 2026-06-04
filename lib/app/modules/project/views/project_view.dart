@@ -83,7 +83,7 @@ class ProjectView extends GetView<ProjectController> {
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     children: list.map((project) {
-                      final projectId = project.id ?? '';
+                      final projectId = project.id?.toString() ?? '';
                       final progress = controller.getProgressPercentage(projectId);
                       final progressLabel = "${(progress * 100).toStringAsFixed(0)}%";
                       
