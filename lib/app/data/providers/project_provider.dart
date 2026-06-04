@@ -16,8 +16,11 @@ class ProjectProvider {
       }
       print("[ProjectProvider] fetchProjects: Authenticated user ID: ${user.id}");
 
-      print("[ProjectProvider] fetchProjects: executing client.from('projects').select()");
-      final response = await _client.from('projects').select();
+      print("[ProjectProvider] fetchProjects: executing client.from('projects').select() with 10s timeout");
+      final response = await _client
+          .from('projects')
+          .select()
+          .timeout(const Duration(seconds: 10));
       print("[ProjectProvider] fetchProjects: client response received. Type: ${response.runtimeType}");
 
       if (response == null) {
