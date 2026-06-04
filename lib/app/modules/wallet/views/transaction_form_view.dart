@@ -1,8 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:lifesync_app/app/modules/wallet/controllers/transaction_controller.dart';
+import 'package:lifesync_app/app/modules/wallet/controllers/wallet_controller.dart';
 import '../../../../core/constants/app_colors.dart';
 
-class TransactionFormView extends StatelessWidget {
+class TransactionFormView extends GetView<TransactionController> {
   const TransactionFormView({super.key});
+
+  IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'account_balance_wallet':
+        return Icons.account_balance_wallet_outlined;
+      case 'trending_up':
+        return Icons.trending_up;
+      case 'restaurant':
+        return Icons.restaurant_outlined;
+      case 'shopping_bag':
+        return Icons.shopping_bag_outlined;
+      case 'directions_car':
+        return Icons.directions_car_outlined;
+      case 'medical_services':
+        return Icons.medical_services_outlined;
+      case 'bolt':
+        return Icons.bolt;
+      case 'more_horiz':
+      default:
+        return Icons.more_horiz;
+    }
+  }
+
+  String _formatDate(DateTime dt) {
+    final List<String> monthsShort = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = monthsShort[dt.month - 1];
+    final year = dt.year;
+    return '$day $month $year';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,15 +49,40 @@ class TransactionFormView extends StatelessWidget {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Tambah Transaksi',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: Obx(() => Text(
+              controller.isEditMode.value ? 'Edit Transaksi' : 'Tambah Transaksi',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: AppColors.textPrimary,
+              ),
+            )),
         centerTitle: true,
+        actions: [
+          Obx(() {
+            if (controller.isEditMode.value) {
+              return IconButton(
+                icon: const Icon(Icons.delete_outline, color: Colors.red),
+                onPressed: () {
+                  Get.defaultDialog(
+                    title: 'Hapus Transaksi',
+                    middleText: 'Apakah Anda yakin ingin menghapus transaksi ini?',
+                    textConfirm: 'Hapus',
+                    textCancel: 'Batal',
+                    confirmTextColor: Colors.white,
+                    buttonColor: Colors.red,
+                    onConfirm: () {
+                      Get.back(); // Tutup dialog
+                      Get.find<WalletController>().deleteTransaction(controller.editTransaction!.id!);
+                      Get.back(); // Kembali ke halaman utama
+                    },
+                  );
+                },
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -30,19 +91,31 @@ class TransactionFormView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 1. Toggle Pengeluaran / Pemasukan
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(child: _buildToggleOption('Pengeluaran', true)),
-                    Expanded(child: _buildToggleOption('Pemasukan', false)),
-                  ],
-                ),
-              ),
+              Obx(() => Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainer,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildToggleOption(
+                            'Pengeluaran',
+                            !controller.isIncome.value,
+                            () => controller.isIncome.value = false,
+                          ),
+                        ),
+                        Expanded(
+                          child: _buildToggleOption(
+                            'Pemasukan',
+                            controller.isIncome.value,
+                            () => controller.isIncome.value = true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )),
               const SizedBox(height: 40),
 
               // 2. Input Nominal (Large)
@@ -59,13 +132,10 @@ class TransactionFormView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-
-                    // 1. Bungkus dengan Padding horizontal agar tidak menempel pas di pinggir layar
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 24.0),
                       child: FittedBox(
-                        fit: BoxFit
-                            .scaleDown, // KUNCI UTAMA: Otomatis mengecilkan font jika ruang tidak cukup
+                        fit: BoxFit.scaleDown,
                         alignment: Alignment.center,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -80,27 +150,22 @@ class TransactionFormView extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: 12),
-
                             ConstrainedBox(
-                              // Berikan minWidth standar agar saat kosong ('0') area ketik tidak terlalu kecil
                               constraints: const BoxConstraints(minWidth: 60),
                               child: IntrinsicWidth(
                                 child: TextField(
-                                  // controller: controller.nominalController,
+                                  controller: controller.amountController,
                                   keyboardType: TextInputType.number,
                                   textAlign: TextAlign.left,
                                   style: const TextStyle(
-                                    fontSize:
-                                        56, // Tetap gunakan font besar untuk nominal kecil
+                                    fontSize: 56,
                                     fontWeight: FontWeight.bold,
                                     color: AppColors.textPrimary,
                                   ),
                                   decoration: InputDecoration(
                                     hintText: '0',
                                     hintStyle: TextStyle(
-                                      color: AppColors.textPrimary.withOpacity(
-                                        0.3,
-                                      ),
+                                      color: AppColors.textPrimary.withOpacity(0.3),
                                     ),
                                     filled: false,
                                     fillColor: Colors.transparent,
@@ -128,32 +193,36 @@ class TransactionFormView extends StatelessWidget {
               const SizedBox(height: 48),
 
               // 3. Kategori
-              _buildSectionHeader('Kategori', 'Lihat Semua'),
+              _buildSectionHeader('Kategori'),
               const SizedBox(height: 16),
-              SizedBox(
-                height: 100,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    _buildCategoryItem(Icons.restaurant, 'Food', true),
-                    _buildCategoryItem(
-                      Icons.shopping_bag_outlined,
-                      'Shop',
-                      false,
-                    ),
-                    _buildCategoryItem(
-                      Icons.directions_car_outlined,
-                      'Trans',
-                      false,
-                    ),
-                    _buildCategoryItem(
-                      Icons.medical_services_outlined,
-                      'Health',
-                      false,
-                    ),
-                  ],
-                ),
-              ),
+              Obx(() {
+                final list = controller.filteredCategories;
+                if (list.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    child: Text('Kategori tidak ditemukan', style: TextStyle(color: AppColors.textSecondary)),
+                  );
+                }
+                return SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: list.length,
+                    itemBuilder: (context, index) {
+                      final cat = list[index];
+                      final isSelected = controller.selectedCategoryId.value == cat.id;
+                      return GestureDetector(
+                        onTap: () => controller.selectedCategoryId.value = cat.id ?? '',
+                        child: _buildCategoryItem(
+                          _getIconData(cat.icon),
+                          cat.name,
+                          isSelected,
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }),
               const SizedBox(height: 32),
 
               // 4. Pilih Dompet
@@ -166,43 +235,58 @@ class TransactionFormView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: _buildWalletOption(
-                      'Tabungan Utama',
-                      'Rp 12.500.000',
-                      Icons.account_balance_wallet,
-                      true,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _buildWalletOption(
-                      'Kartu Kredit',
-                      'Limit Rp 5.00',
-                      Icons.credit_card,
-                      false,
-                    ),
-                  ),
-                ],
-              ),
+              Obx(() {
+                final list = controller.wallets;
+                if (list.isEmpty) {
+                  return const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.0),
+                    child: Text('Harap tambahkan dompet terlebih dahulu', style: TextStyle(color: AppColors.textSecondary)),
+                  );
+                }
+                return Row(
+                  children: list.map((wallet) {
+                    final isSelected = controller.selectedWalletId.value == wallet.id.toString();
+                    final balanceText = (wallet.balance ?? 0.0)
+                        .toStringAsFixed(0)
+                        .replaceAllMapped(
+                          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                          (Match m) => '${m[1]}.',
+                        );
+
+                    return Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: GestureDetector(
+                          onTap: () => controller.selectedWalletId.value = wallet.id.toString(),
+                          child: _buildWalletOption(
+                            wallet.name ?? 'Dompet',
+                            'Rp $balanceText',
+                            Icons.account_balance_wallet,
+                            isSelected,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                );
+              }),
               const SizedBox(height: 32),
 
               // 5. Tanggal & Catatan
               _buildLabel('Tanggal'),
               const SizedBox(height: 12),
-              _buildInputField(
-                Icons.calendar_today_outlined,
-                'Today, 24 May 2024',
-              ),
+              Obx(() {
+                final dateText = _formatDate(controller.selectedDate.value);
+                return _buildDateField(dateText, () => controller.selectDate(context));
+              }),
 
               const SizedBox(height: 24),
               _buildLabel('Catatan'),
               const SizedBox(height: 12),
               _buildInputField(
-                Icons.notes,
-                'Tambahkan deskripsi transaksi...',
+                icon: Icons.notes,
+                hint: 'Tambahkan deskripsi transaksi...',
+                textController: controller.notesController,
                 isMultiline: true,
               ),
 
@@ -211,39 +295,30 @@ class TransactionFormView extends StatelessWidget {
               // 6. Tombol Simpan
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondary,
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    'Simpan Transaksi',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
+                child: Obx(() => ElevatedButton(
+                      onPressed: controller.isLoading.value
+                          ? null
+                          : () => controller.saveTransaction(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        controller.isLoading.value
+                            ? 'Menyimpan...'
+                            : (controller.isEditMode.value ? 'Simpan Perubahan' : 'Simpan Transaksi'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
+                    )),
               ),
               const SizedBox(height: 16),
-              Center(
-                child: TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'Batal',
-                    style: TextStyle(
-                      color: Colors.redAccent,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 40),
             ],
           ),
         ),
@@ -251,26 +326,29 @@ class TransactionFormView extends StatelessWidget {
     );
   }
 
-  Widget _buildToggleOption(String label, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: isSelected ? AppColors.secondary : Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: isSelected ? Colors.white : AppColors.textSecondary,
+  Widget _buildToggleOption(String label, bool isSelected, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.secondary : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, String action) {
+  Widget _buildSectionHeader(String title) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
@@ -280,14 +358,6 @@ class TransactionFormView extends StatelessWidget {
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
-          ),
-        ),
-        Text(
-          action,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: AppColors.secondary,
           ),
         ),
       ],
@@ -303,13 +373,9 @@ class TransactionFormView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? const Color(0xFFE0F7F1)
-                  : AppColors.surfaceContainer,
+              color: isSelected ? const Color(0xFFE0F7F1) : AppColors.surfaceContainer,
               borderRadius: BorderRadius.circular(16),
-              border: isSelected
-                  ? Border.all(color: AppColors.secondary, width: 1.5)
-                  : null,
+              border: isSelected ? Border.all(color: AppColors.secondary, width: 1.5) : null,
             ),
             child: Icon(
               icon,
@@ -322,10 +388,10 @@ class TransactionFormView extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-              color: isSelected
-                  ? AppColors.textPrimary
-                  : AppColors.textSecondary,
+              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -344,9 +410,7 @@ class TransactionFormView extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isSelected
-              ? AppColors.secondary
-              : AppColors.outline.withOpacity(0.5),
+          color: isSelected ? AppColors.secondary : AppColors.outline.withOpacity(0.5),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -356,9 +420,7 @@ class TransactionFormView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? AppColors.secondary
-                  : AppColors.surfaceContainer,
+              color: isSelected ? AppColors.secondary : AppColors.surfaceContainer,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -384,6 +446,8 @@ class TransactionFormView extends StatelessWidget {
               fontSize: 11,
               color: AppColors.textSecondary,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
       ),
@@ -401,33 +465,73 @@ class TransactionFormView extends StatelessWidget {
     );
   }
 
-  Widget _buildInputField(
-    IconData icon,
-    String hint, {
+  Widget _buildDateField(String text, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.outline.withOpacity(0.5)),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_today_outlined, size: 20, color: AppColors.textSecondary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                text,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down, size: 20, color: AppColors.textSecondary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputField({
+    required IconData icon,
+    required String hint,
+    TextEditingController? textController,
     bool isMultiline = false,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.outline.withOpacity(0.5)),
       ),
       child: Row(
-        crossAxisAlignment: isMultiline
-            ? CrossAxisAlignment.start
-            : CrossAxisAlignment.center,
+        crossAxisAlignment: isMultiline ? CrossAxisAlignment.start : CrossAxisAlignment.center,
         children: [
-          Icon(icon, size: 20, color: AppColors.textSecondary),
+          Padding(
+            padding: const EdgeInsets.only(top: 4.0),
+            child: Icon(icon, size: 20, color: AppColors.textSecondary),
+          ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              hint,
+            child: TextField(
+              controller: textController,
+              maxLines: isMultiline ? 3 : 1,
+              decoration: InputDecoration(
+                hintText: hint,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
               style: const TextStyle(
-                color: AppColors.textSecondary,
+                color: AppColors.textPrimary,
                 fontSize: 15,
               ),
-              maxLines: isMultiline ? 3 : 1,
             ),
           ),
         ],

@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:lifesync_app/app/modules/wallet/controllers/wallet_controller.dart';
 import 'package:lifesync_app/app/modules/wallet/components/wallet_card_widget.dart';
 import '../../../../core/constants/app_colors.dart';
 
-class WalletFormView extends StatelessWidget {
+class WalletFormView extends GetView<WalletController> {
   const WalletFormView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final List<String> availableColorsHex = [
+      '1E3A8A', // Blue
+      '10B981', // Green
+      'F59E0B', // Amber
+      'EF4444', // Red
+      '6B7280', // Gray
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -25,26 +35,36 @@ class WalletFormView extends StatelessWidget {
         centerTitle: true,
       ),
       body: SafeArea(
+        bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 26.0, vertical: 16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // 1. Visual Card Preview (Reactive)
               Center(
-                child: WalletCardWidget(
-                  title: "Dompet Utama",
-                  balance: "Rp 15.450.000",
-                  backgroundColor: AppColors.primary,
-                ),
+                child: Obx(() {
+                  final name = controller.previewName.value;
+                  final balance = controller.previewBalance.value;
+                  final colorHex = controller.selectedColorHex.value;
+                  final color = Color(int.parse('FF$colorHex', radix: 16));
+
+                  return WalletCardWidget(
+                    title: name,
+                    balance: 'Rp $balance',
+                    backgroundColor: color,
+                  );
+                }),
               ),
               const SizedBox(height: 32),
-              // 2. Pemilih Tema Warna
+
+              // 2. Pemilih Tema Warna (Reactive)
               _buildLabel('Tema Warna'),
               const SizedBox(height: 16),
-              _buildColorSelector(),
+              _buildColorSelector(availableColorsHex),
               const SizedBox(height: 40),
 
-              // 3. Form Input Minimalis
+              // 3. Form Input
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -64,18 +84,32 @@ class WalletFormView extends StatelessWidget {
                   children: [
                     _buildLabel('Nama Dompet'),
                     const SizedBox(height: 12),
-                    const TextField(
-                      decoration: InputDecoration(
+                    TextField(
+                      controller: controller.walletNameController,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      decoration: const InputDecoration(
                         hintText: 'Contoh: BCA Prioritas',
                       ),
                     ),
                     const SizedBox(height: 24),
                     _buildLabel('Saldo Awal'),
                     const SizedBox(height: 12),
-                    const TextField(
+                    TextField(
+                      controller: controller.initialBalanceController,
                       keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                      decoration: const InputDecoration(
                         prefixText: 'Rp ',
+                        prefixStyle: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                         hintText: '0',
                       ),
                     ),
@@ -84,7 +118,7 @@ class WalletFormView extends StatelessWidget {
               ),
               const SizedBox(height: 48),
 
-              // 4. Tombol Aksi
+              // 4. Tombol Simpan
               _buildActionButtons(context),
               const SizedBox(height: 40),
             ],
@@ -94,46 +128,55 @@ class WalletFormView extends StatelessWidget {
     );
   }
 
-  Widget _buildColorSelector() {
-    final colors = [
-      const Color(0xFF0F172A), // Slate
-      const Color(0xFF065F46), // Emerald
-      const Color(0xFF7DD3FC), // Light Blue
-      const Color(0xFFB91C1C), // Red
-      const Color(0xFF334155), // Grayish Slate
-    ];
-
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: colors.map((color) {
-        bool isSelected = color == colors[0]; // Visual default
-        return Container(
-          margin: const EdgeInsets.only(right: 16),
-          padding: const EdgeInsets.all(3),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: isSelected
-                ? Border.all(color: AppColors.primary, width: 2)
-                : null,
-          ),
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-          ),
-        );
-      }).toList(),
+  Widget _buildLabel(String text) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 1.2,
+        color: AppColors.textSecondary,
+      ),
     );
   }
 
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: AppColors.textPrimary,
-      ),
+  Widget _buildColorSelector(List<String> hexCodes) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: hexCodes.map((hex) {
+        final color = Color(int.parse('FF$hex', radix: 16));
+        return Obx(() {
+          final isSelected = controller.selectedColorHex.value == hex;
+          return GestureDetector(
+            onTap: () => controller.selectColor(hex),
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: isSelected
+                    ? Border.all(color: Colors.black, width: 2)
+                    : Border.all(color: Colors.transparent, width: 2),
+              ),
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 6,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        });
+      }).toList(),
     );
   }
 
@@ -142,21 +185,26 @@ class WalletFormView extends StatelessWidget {
       children: [
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          child: Obx(
+            () => ElevatedButton(
+              onPressed: controller.isLoading.value
+                  ? null
+                  : () => controller.addNewWallet(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                elevation: 0,
               ),
-            ),
-            child: const Text(
-              'Simpan Dompet',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                fontSize: 16,
+              child: Text(
+                controller.isLoading.value ? 'Menyimpan...' : 'Simpan Dompet',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),

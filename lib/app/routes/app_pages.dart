@@ -1,9 +1,14 @@
 import 'package:get/get.dart';
+import 'package:lifesync_app/app/modules/category/views/category_form_view.dart';
+import 'package:lifesync_app/app/modules/profile/views/profile_setting_view.dart';
 import 'package:lifesync_app/app/modules/project/views/project_form_view.dart';
 import 'package:lifesync_app/app/modules/project/views/project_view.dart';
 import 'package:lifesync_app/app/modules/task/views/task_form_view.dart';
+import 'package:lifesync_app/app/modules/wallet/controllers/transaction_controller.dart';
 import 'package:lifesync_app/app/modules/wallet/views/transaction_form_view.dart';
+import 'package:lifesync_app/app/modules/wallet/views/transaction_view.dart';
 import 'package:lifesync_app/app/modules/wallet/views/wallet_form_view.dart';
+import 'package:lifesync_app/core/middleware/auth_middleware.dart';
 
 import '../modules/category/bindings/category_binding.dart';
 import '../modules/category/bindings/category_binding.dart';
@@ -40,31 +45,47 @@ class AppPages {
       name: _Paths.HOME,
       page: () => const HomeView(),
       binding: HomeBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: _Paths.LOGIN,
       page: () => const LoginView(),
       binding: LoginBinding(),
+      middlewares: [],
     ),
     GetPage(
       name: _Paths.REGISTER,
       page: () => const RegisterView(),
       binding: RegisterBinding(),
+      middlewares: [],
     ),
     GetPage(
       name: _Paths.MAIN,
       page: () => const MainView(),
       binding: MainBinding(),
+      middlewares: [AuthMiddleware()],
     ),
     GetPage(
       name: _Paths.WALLET,
       page: () => const WalletView(),
       binding: WalletBinding(),
+      middlewares: [AuthMiddleware()],
       children: [
-        GetPage(name: '/create', page: () => const WalletFormView()),
+        GetPage(
+          name: '/create',
+          page: () => const WalletFormView(),
+          binding: WalletBinding(), // <-- Tambahkan di sini
+        ),
         GetPage(
           name: '/transaction/create',
           page: () => const TransactionFormView(),
+          binding:
+              WalletBinding(), // <-- Tambahkan di sini agar TransactionController ter-inject
+        ),
+        GetPage(
+          name: '/transaction',
+          page: () => const TransactionView(),
+          binding: WalletBinding(), // <-- Tambahkan di sini juga jika butuh
         ),
       ],
     ),
@@ -72,10 +93,11 @@ class AppPages {
       name: _Paths.CATEGORY,
       page: () => const CategoryView(),
       binding: CategoryBinding(),
+      middlewares: [AuthMiddleware()],
       children: [
         GetPage(
-          name: _Paths.CATEGORY,
-          page: () => const CategoryView(),
+          name: '/create',
+          page: () => const CategoryFormView(),
           binding: CategoryBinding(),
         ),
       ],
@@ -84,23 +106,30 @@ class AppPages {
       name: _Paths.PROJECT,
       page: () => const ProjectView(),
       binding: ProjectBinding(),
+      middlewares: [AuthMiddleware()],
       children: [GetPage(name: '/create', page: () => const ProjectFormView())],
     ),
     GetPage(
       name: _Paths.TASK,
       page: () => const TaskView(),
       binding: TaskBinding(),
+      middlewares: [AuthMiddleware()],
       children: [GetPage(name: '/create', page: () => const TaskFormView())],
     ),
     GetPage(
       name: _Paths.PROFILE,
       page: () => const ProfileView(),
       binding: ProfileBinding(),
+      middlewares: [AuthMiddleware()],
+      children: [
+        GetPage(name: '/setting', page: () => const ProfileSettingView()),
+      ],
     ),
     GetPage(
       name: _Paths.NOTIFICATION,
       page: () => const NotificationView(),
       binding: NotificationBinding(),
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }

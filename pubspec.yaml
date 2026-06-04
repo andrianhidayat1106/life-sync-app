@@ -28,18 +28,21 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  auto_size_text: ^3.0.0
   cupertino_icons: ^1.0.8
   flutter:
     sdk: flutter
+  flutter_svg: ^2.0.10+1
+  fluttertoast: ^9.0.0
   get: ^4.7.3
+  get_storage: ^2.1.1
+  image_picker: ^1.1.2
+  supabase_flutter: ^2.12.4
 
 dev_dependencies:
-  auto_size_text: ^3.0.0
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  get_storage: ^2.1.1
-  supabase_flutter: ^2.12.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -53,6 +56,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/life_sync_logo.png
+    - assets/images/user.svg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
   # For details regarding adding assets from package dependencies, see

@@ -1,33 +1,86 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lifesync_app/app/data/models/wallet_model.dart';
+import 'package:lifesync_app/app/modules/wallet/controllers/wallet_controller.dart';
 import 'package:lifesync_app/app/modules/wallet/components/wallet_card_widget.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/widgets/header.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 
-class WalletView extends StatelessWidget {
+class WalletView extends GetView<WalletController> {
   const WalletView({super.key});
+
+  Color _parseColor(String? hexString) {
+    if (hexString == null || hexString.isEmpty) return const Color(0xFF1E293B);
+    final hex = hexString.replaceAll('#', '');
+    if (hex.length == 6) {
+      return Color(int.parse('FF$hex', radix: 16));
+    } else if (hex.length == 8) {
+      return Color(int.parse(hex, radix: 16));
+    }
+    return const Color(0xFF1E293B);
+  }
+
+  IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'account_balance_wallet':
+        return Icons.account_balance_wallet_outlined;
+      case 'trending_up':
+        return Icons.trending_up;
+      case 'restaurant':
+        return Icons.restaurant_outlined;
+      case 'shopping_bag':
+        return Icons.shopping_bag_outlined;
+      case 'directions_car':
+        return Icons.directions_car_outlined;
+      case 'medical_services':
+        return Icons.medical_services_outlined;
+      case 'bolt':
+        return Icons.bolt;
+      case 'more_horiz':
+      default:
+        return Icons.more_horiz;
+    }
+  }
+
+  String _formatDateTime(DateTime dt) {
+    final List<String> monthsShort = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = monthsShort[dt.month - 1];
+    final year = dt.year;
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return '$day $month $year • $hour:$minute';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final List<String> months = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+    final currentMonthName = months[DateTime.now().month - 1];
+    final currentYear = DateTime.now().year;
+    final periodText = 'Bulan $currentMonthName $currentYear';
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        bottom: false,
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Section
-
               // Title Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Header(title: "Andrian Hidayat"),
+                    const Header(title: "User"),
                     const SizedBox(height: 32),
                     const Text(
                       'Dompet Saya',
@@ -38,7 +91,7 @@ class WalletView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    const Text(
                       'Kelola pengeluaran dan tabungan Anda dengan harmonis.',
                       style: TextStyle(
                         fontSize: 14,
@@ -50,39 +103,69 @@ class WalletView extends StatelessWidget {
               ),
               const SizedBox(height: 32),
 
-              _buildWalletCarousel(),
+              // Wallet Carousel (Reactive)
+              Obx(() {
+                if (controller.isLoading.value) {
+                  return const SizedBox(
+                    height: 200,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  );
+                }
+                return _buildWalletCarousel(controller.wallets);
+              }),
               const SizedBox(height: 16),
-              _buildCarouselIndicator(),
+              
+              // Carousel Indicator (Reactive)
+              Obx(() => _buildCarouselIndicator(controller.wallets.length + 1)),
               const SizedBox(height: 32),
 
-              // Summary Cards (Pemasukan & Pengeluaran)
+              // Summary Cards (Pemasukan & Pengeluaran Reaktif Bulan Ini)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'PEMASUKAN',
-                        '+ Rp 15.000.000',
-                        'Bulan Oktober 2023',
-                        const Color(0xFFE0F7F1),
-                        const Color(0xFF10B981),
-                        Icons.trending_up,
+                child: Obx(() {
+                  final String incomeText = controller.totalIncomeThisMonth.value
+                      .toStringAsFixed(0)
+                      .replaceAllMapped(
+                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                        (Match m) => '${m[1]}.',
+                      );
+                  final String outcomeText = controller.totalOutcomeThisMonth.value
+                      .toStringAsFixed(0)
+                      .replaceAllMapped(
+                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                        (Match m) => '${m[1]}.',
+                      );
+
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _buildSummaryCard(
+                          'PEMASUKAN',
+                          '+ Rp $incomeText',
+                          periodText,
+                          const Color(0xFFE0F7F1),
+                          const Color(0xFF10B981),
+                          Icons.trending_up,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _buildSummaryCard(
-                        'PENGELUARAN',
-                        '- Rp 15.000.000',
-                        'Bulan Oktober 2023',
-                        const Color(0xFFFEE2E2),
-                        const Color(0xFFEF4444),
-                        Icons.trending_down,
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSummaryCard(
+                          'PENGELUARAN',
+                          '- Rp $outcomeText',
+                          periodText,
+                          const Color(0xFFFEE2E2),
+                          const Color(0xFFEF4444),
+                          Icons.trending_down,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  );
+                }),
               ),
               const SizedBox(height: 32),
 
@@ -90,193 +173,172 @@ class WalletView extends StatelessWidget {
               _buildTransactionHistory(),
               const SizedBox(height: 12),
 
-              // Quick Action Button
-              Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text(
-                        'Lihat Semua Transaksi',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
+              // Quick Action Button (Lihat Semua Transaksi)
+              Obx(() {
+                final filteredList = controller.transactions.where((tx) {
+                  if (controller.selectedFilter.value == 'Pendapatan') {
+                    return tx.type == 'income';
+                  } else if (controller.selectedFilter.value == 'Pengeluaran') {
+                    return tx.type == 'outcome';
+                  }
+                  return true;
+                }).toList();
+
+                if (filteredList.length > 4) {
+                  return Center(
+                    child: TextButton(
+                      onPressed: () => Get.toNamed('/wallet/transaction'),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: const [
+                          Text(
+                            'Lihat Semua Transaksi',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          SizedBox(width: 8),
+                          Icon(
+                            Icons.arrow_forward,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.arrow_forward,
-                        size: 16,
-                        color: AppColors.textSecondary,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
               const SizedBox(height: 80), // Padding for bottom nav
             ],
           ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Get.toNamed("wallet/transaction/create");
-        },
+        onPressed: () => Get.toNamed('/wallet/transaction/create'),
         backgroundColor: Colors.black,
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 20,
-                backgroundImage: NetworkImage(
-                  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Harmoni Hidup',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none_outlined),
-            color: AppColors.textPrimary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWalletCarousel() {
+  Widget _buildWalletCarousel(List<WalletModel> wallets) {
     return SizedBox(
       height: 200,
-      child: ListView(
+      child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        children: [
-          WalletCardWidget(
-            title: 'DOMPET UTAMA',
-            balance: 'Rp 15.450.000',
-            backgroundColor: const Color(0xFF1E293B),
-          ),
-          const SizedBox(width: 16),
-          WalletCardWidget(
-            title: 'TABUNGAN',
-            balance: 'Rp 10.000.000',
-            backgroundColor: const Color(0xFF065F46),
-          ),
-          const SizedBox(width: 16),
-          GestureDetector(
-            onTap: () {},
-            child: Container(
-              width: 320,
-              height: 200, // Menyesuaikan dengan tinggi rata-rata WalletCard
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: AppColors.outline.withOpacity(0.5),
-                  width: 2,
-                  style: BorderStyle.solid,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.02),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFE0F7F1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.add_card_outlined,
-                      size: 32,
-                      color: Color(0xFF10B981),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Tambah Dompet Baru',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Kelola sumber dana lainnya',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+        itemCount: wallets.length + 1, // +1 untuk tombol kartu baru
+        itemBuilder: (context, index) {
+          if (index == wallets.length) {
+            return GestureDetector(
+              onTap: () => Get.toNamed('/wallet/create'),
+              child: _buildAddNewWalletCard(),
+            );
+          }
+
+          final wallet = wallets[index];
+          final color = _parseColor(wallet.colorHex);
+
+          final String balanceText = (wallet.balance ?? 0.0)
+              .toStringAsFixed(0)
+              .replaceAllMapped(
+                RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                (Match m) => '${m[1]}.',
+              );
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: GestureDetector(
+              onTap: () {
+                controller.currentCarouselIndex.value = index;
+              },
+              child: WalletCardWidget(
+                title: (wallet.name ?? '').toUpperCase(),
+                balance: 'Rp $balanceText',
+                backgroundColor: color,
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildAddNewWalletCard() {
+    return Container(
+      width: 320,
+      height: 200,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: AppColors.outline.withOpacity(0.5),
+          width: 2,
+          style: BorderStyle.solid,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              color: Color(0xFFE0F7F1),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.add_card_outlined,
+              size: 32,
+              color: Color(0xFF10B981),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Tambah Dompet Baru',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Kelola sumber dana lainnya',
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildCarouselIndicator() {
+  Widget _buildCarouselIndicator(int totalSize) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          width: 16,
+      children: List.generate(totalSize, (index) {
+        final isSelected = index == controller.currentCarouselIndex.value;
+        return Container(
+          width: isSelected ? 16 : 8,
           height: 4,
+          margin: const EdgeInsets.symmetric(horizontal: 2),
           decoration: BoxDecoration(
-            color: AppColors.textPrimary,
+            color: isSelected
+                ? AppColors.textPrimary
+                : AppColors.textSecondary.withOpacity(0.3),
             borderRadius: BorderRadius.circular(2),
           ),
-        ),
-        const SizedBox(width: 4),
-        Container(
-          width: 8,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.textSecondary.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-        const SizedBox(width: 4),
-        Container(
-          width: 8,
-          height: 4,
-          decoration: BoxDecoration(
-            color: AppColors.textSecondary.withOpacity(0.3),
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      ],
+        );
+      }),
     );
   }
 
@@ -293,7 +355,7 @@ class WalletView extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.outline.withValues(alpha: 0.5)),
+        border: Border.all(color: AppColors.outline.withOpacity(0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +369,7 @@ class WalletView extends StatelessWidget {
                 minFontSize: 5,
                 overflow: TextOverflow.ellipsis,
                 maxFontSize: 11,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textSecondary,
@@ -323,7 +385,6 @@ class WalletView extends StatelessWidget {
             maxFontSize: 16,
             style: TextStyle(
               fontSize: 16,
-
               fontWeight: FontWeight.bold,
               color: textColor,
             ),
@@ -331,7 +392,10 @@ class WalletView extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             period,
-            style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -359,85 +423,105 @@ class WalletView extends StatelessWidget {
                 color: AppColors.textPrimary,
               ),
             ),
-            SizedBox(height: 12),
+            const SizedBox(height: 12),
             Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Semua',
-                    style: TextStyle(
-                      color: Color(0xFF0369A1),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE0F2FE),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'Pendapatan',
-                    style: TextStyle(
-                      color: Color(0xFF0369A1),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
+                _buildFilterTab('Semua'),
+                const SizedBox(width: 12),
+                _buildFilterTab('Pendapatan'),
+                const SizedBox(width: 12),
+                _buildFilterTab('Pengeluaran'),
               ],
             ),
             const SizedBox(height: 24),
-            _buildTransactionItem(
-              'Supermarket Harmoni',
-              '12 Okt 2023 • 14:30',
-              '- Rp 450.000',
-              'Kebutuhan Pokok',
-              const Color(0xFFFEE2E2),
-              Icons.shopping_cart,
-            ),
-            _buildTransactionItem(
-              'Gaji Bulanan',
-              '01 Okt 2023 • 09:00',
-              '+ Rp 15.000.000',
-              'Pendapatan',
-              const Color(0xFFD1FAE5),
-              Icons.account_balance_wallet,
-            ),
-            _buildTransactionItem(
-              'Kafe Senja',
-              '30 Sep 2023 • 19:15',
-              '- Rp 125.000',
-              'Hiburan',
-              const Color(0xFFDBEAFE),
-              Icons.restaurant,
-            ),
-            _buildTransactionItem(
-              'Listrik & Air',
-              '28 Sep 2023 • 10:00',
-              '- Rp 850.000',
-              'Tagihan',
-              const Color(0xFFFEF9C3),
-              Icons.bolt,
-            ),
+            Obx(() {
+              final filter = controller.selectedFilter.value;
+              final filteredList = controller.transactions.where((tx) {
+                if (filter == 'Pendapatan') {
+                  return tx.type == 'income';
+                } else if (filter == 'Pengeluaran') {
+                  return tx.type == 'outcome';
+                }
+                return true;
+              }).toList();
+
+              if (filteredList.isEmpty) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24.0),
+                    child: Text(
+                      'Tidak ada transaksi',
+                      style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    ),
+                  ),
+                );
+              }
+
+              // Tampilkan maksimal 4 item
+              final displayList = filteredList.take(4).toList();
+
+              return Column(
+                children: displayList.map((tx) {
+                  final String sign = tx.type == 'income' ? '+' : '-';
+                  final String amountText = tx.amount
+                      .toStringAsFixed(0)
+                      .replaceAllMapped(
+                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                        (Match m) => '${m[1]}.',
+                      );
+
+                  final iconColor = _parseColor(tx.categoryColorHex);
+                  final iconBg = iconColor.withOpacity(0.12);
+
+                  return GestureDetector(
+                    onTap: () => Get.toNamed('/wallet/transaction/create', arguments: tx),
+                    behavior: HitTestBehavior.opaque,
+                    child: _buildTransactionItem(
+                      tx.categoryName ?? 'Lain-lain',
+                      '${_formatDateTime(tx.transactionDate)} • ${tx.notes ?? "Tanpa catatan"}',
+                      '$sign Rp $amountText',
+                      tx.categoryName ?? 'Kategori',
+                      iconBg,
+                      _getIconData(tx.categoryIcon),
+                    ),
+                  );
+                }).toList(),
+              );
+            }),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildFilterTab(String label) {
+    return Obx(() {
+      final isSelected = controller.selectedFilter.value == label;
+      return GestureDetector(
+        onTap: () => controller.selectedFilter.value = label,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
+          ),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFFE0F2FE) : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? Colors.transparent : AppColors.outline.withOpacity(0.5),
+            ),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFF0369A1) : AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      );
+    });
   }
 
   Widget _buildTransactionItem(
@@ -462,7 +546,7 @@ class WalletView extends StatelessWidget {
             child: Icon(
               icon,
               size: 20,
-              color: AppColors.textPrimary.withOpacity(0.8),
+              color: isIncome ? const Color(0xFF10B981) : const Color(0xFFEF4444),
             ),
           ),
           const SizedBox(width: 16),
@@ -480,10 +564,12 @@ class WalletView extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   date,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -504,7 +590,10 @@ class WalletView extends StatelessWidget {
               const SizedBox(height: 2),
               Text(
                 category,
-                style: TextStyle(fontSize: 10, color: AppColors.textSecondary),
+                style: const TextStyle(
+                  fontSize: 10,
+                  color: AppColors.textSecondary,
+                ),
               ),
             ],
           ),

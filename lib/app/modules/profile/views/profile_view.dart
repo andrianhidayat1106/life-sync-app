@@ -1,57 +1,87 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get/get.dart';
+import 'package:lifesync_app/app/modules/profile/controllers/profile_controller.dart';
+import 'package:lifesync_app/app/routes/app_pages.dart';
 import 'package:lifesync_app/core/widgets/custom_app_bar.dart';
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/widgets/header.dart';
 
-class ProfileView extends StatelessWidget {
+class ProfileView extends GetView<ProfileController> {
   const ProfileView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(title: "Profil"),
       backgroundColor: AppColors.background,
+      appBar: const CustomAppBar(title: "Profil"),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              // Custom Header / Top Bar
-              const SizedBox(height: 40),
+              // 1. Profile Header Section
+              _buildProfileHeader(context),
+              const SizedBox(height: 32),
 
-              // Profile Image & Name Section
-              _buildProfileHeader(),
-              const SizedBox(height: 48),
+              // 2. Account Settings Group
+              _buildSectionTitle('PENGATURAN AKUN'),
+              const SizedBox(height: 12),
+              _buildSettingsCard([
+                _buildSettingsItem(
+                  icon: Icons.person_outline,
+                  title: 'Informasi Pribadi',
+                  onTap: () => Get.toNamed(Routes.PROFILE + '/setting'),
+                ),
 
-              // Main Settings Section
+                _buildSettingsItem(
+                  icon: Icons.notifications_none,
+                  title: 'Preferensi Notifikasi',
+                  badge: '3',
+                  onTap: () => Get.toNamed(Routes.NOTIFICATION),
+                ),
+              ]),
+
+              const SizedBox(height: 32),
+
+              // 3. Tombol Logout Premium (Keluar dari Aplikasi)
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Pengaturan Utama',
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmLogout(context),
+                    icon: const Icon(
+                      Icons.logout_rounded,
+                      color: Color(0xFFDC2626),
+                      size: 20,
+                    ),
+                    label: const Text(
+                      'Keluar dari Aplikasi',
                       style: TextStyle(
-                        fontSize: 18,
+                        color: Color(0xFFDC2626),
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                        fontSize: 16,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildSettingsCard(),
-                  ],
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      side: const BorderSide(
+                        color: Color(0xFFFCA5A5),
+                        width: 1.5,
+                      ),
+                      backgroundColor: const Color(0xFFFEF2F2),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 40),
 
-              // Logout Button
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: _buildLogoutButton(),
-              ),
-
-              const SizedBox(height: 100), // Spacing for bottom nav
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -59,216 +89,247 @@ class ProfileView extends StatelessWidget {
     );
   }
 
-  Widget _buildTopBar() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          const Icon(Icons.menu, color: AppColors.textPrimary),
-          const Text(
-            'Harmoni Hidup',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const CircleAvatar(
-            radius: 20,
-            backgroundImage: NetworkImage(
-              'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileHeader() {
+  // Header Profil menampilkan data dari controller secara reaktif
+  Widget _buildProfileHeader(BuildContext context) {
     return Column(
       children: [
         Stack(
           alignment: Alignment.bottomRight,
           children: [
             Container(
-              padding: const EdgeInsets.all(4),
+              padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFFE0F7F1), width: 2),
-              ),
-              child: const CircleAvatar(
-                radius: 64,
-                backgroundImage: NetworkImage(
-                  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
+                border: Border.all(
+                  color: AppColors.secondary.withOpacity(0.2),
+                  width: 3,
                 ),
               ),
-            ),
-            Container(
-              margin: const EdgeInsets.only(bottom: 4, right: 4),
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Color(0xFF065F46),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.edit_outlined,
-                size: 20,
-                color: Colors.white,
-              ),
+              child: Obx(() {
+                final path = controller.profileImagePath.value;
+                if (path.isNotEmpty && File(path).existsSync()) {
+                  return CircleAvatar(
+                    radius: 60,
+                    backgroundImage: FileImage(File(path)),
+                  );
+                } else {
+                  return CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.transparent,
+                    child: ClipOval(
+                      child: SvgPicture.asset(
+                        'assets/images/user.svg',
+                        width: 120,
+                        height: 120,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                }
+              }),
             ),
           ],
         ),
-        const SizedBox(height: 24),
-        const Text(
-          'Budi Santoso',
-          style: TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-            letterSpacing: -1,
+        const SizedBox(height: 20),
+
+        Obx(
+          () => Text(
+            controller.fullName.value.isNotEmpty
+                ? controller.fullName.value
+                : 'Nama Pengguna',
+            style: const TextStyle(
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primary,
+              letterSpacing: -0.5,
+            ),
           ),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'budi.santoso@harmoni.co.id',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w500,
+
+        Obx(
+          () => Text(
+            controller.email.value.isNotEmpty
+                ? controller.email.value
+                : 'user@email.com',
+            style: const TextStyle(
+              fontSize: 14,
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: OutlinedButton.icon(
+            onPressed: () => controller.pickAndSaveImage(),
+            icon: const Icon(Icons.edit, size: 18, color: AppColors.primary),
+            label: const Text(
+              'Edit Profil',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              side: const BorderSide(color: AppColors.outline),
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildSettingsCard() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.outline.withOpacity(0.3)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(
+          title,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textSecondary.withOpacity(0.8),
+            letterSpacing: 1.2,
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildSettingsItem(
-            'Pengaturan Akun',
-            Icons.person_outline,
-            const Color(0xFFEFF4FF),
-            const Color(0xFF0C54BE),
-          ),
-          const Divider(height: 1, indent: 72),
-          _buildSettingsItem(
-            'Notifikasi',
-            Icons.notifications_none_outlined,
-            const Color(0xFFE0F7F1),
-            const Color(0xFF065F46),
-            badge: '3',
-          ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildSettingsItem(
-    String title,
-    IconData icon,
-    Color bgIcon,
-    Color iconColor, {
+  Widget _buildSettingsCard(List<Widget> items) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.outline.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.02),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(children: items),
+    );
+  }
+
+  Widget _buildSettingsItem({
+    required IconData icon,
+    required String title,
     String? badge,
+    String? status,
+    Color? statusColor,
+    required VoidCallback onTap,
   }) {
     return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      onTap: onTap,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       leading: Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: bgIcon,
+          color: AppColors.surfaceContainer,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Icon(icon, color: iconColor),
+        child: Icon(icon, color: AppColors.secondary, size: 22),
       ),
       title: Text(
         title,
         style: const TextStyle(
           fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimary,
+          fontWeight: FontWeight.w600,
+          color: AppColors.primary,
         ),
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (status != null)
+            Text(
+              status,
+              style: TextStyle(
+                color: statusColor ?? AppColors.textSecondary,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
           if (badge != null)
             Container(
-              margin: const EdgeInsets.only(right: 12),
               padding: const EdgeInsets.all(6),
               decoration: const BoxDecoration(
-                color: Color(0xFFB91C1C),
+                color: Colors.redAccent,
                 shape: BoxShape.circle,
               ),
               child: Text(
                 badge,
                 style: const TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
-          const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          const SizedBox(width: 8),
+          const Icon(Icons.chevron_right, color: AppColors.outline, size: 20),
         ],
       ),
-      onTap: () {},
     );
   }
 
-  Widget _buildLogoutButton() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: const Color(0xFFB91C1C),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFB91C1C).withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () {},
-          borderRadius: BorderRadius.circular(16),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 20),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.logout, color: Colors.white, size: 24),
-                SizedBox(width: 12),
-                Text(
-                  'Keluar dari Akun',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              ],
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text(
+            'Keluar Akun',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimary,
             ),
           ),
-        ),
-      ),
+          content: const Text(
+            'Apakah Anda yakin ingin keluar dari aplikasi LifeSync? Sesi Anda akan dihentikan dan harus masuk kembali nanti.',
+            style: TextStyle(color: AppColors.textSecondary, height: 1.5),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Batal',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                controller.logout();
+              },
+              child: const Text(
+                'Keluar',
+                style: TextStyle(
+                  color: Color(0xFFDC2626),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

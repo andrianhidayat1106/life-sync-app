@@ -7,6 +7,7 @@ class SupabaseService extends GetxService {
   SupabaseClient get client => Supabase.instance.client;
 
   // Fungsi inisialisasi yang dijalankan saat aplikasi pertama kali dibuka
+
   Future<SupabaseService> init() async {
     await Supabase.initialize(
       url: SupabaseConstants.url,

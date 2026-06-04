@@ -18,7 +18,10 @@ class HomeView extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 16.0,
+                ),
                 child: Column(
                   children: [
                     Header(title: "Andrian Hidayat"),
@@ -31,7 +34,7 @@ class HomeView extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: EdgeInsetsGeometry.only(left: 24),
+                padding: const EdgeInsets.only(left: 24),
                 child: Column(
                   children: [
                     _buildSectionHeader('Proyek Aktif', 'Lihat Semua', () {}),
@@ -43,7 +46,10 @@ class HomeView extends StatelessWidget {
               ),
 
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0,
+                  vertical: 16.0,
+                ),
                 child: Column(
                   children: [
                     // Today's Tasks Section
@@ -88,7 +94,7 @@ class HomeView extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
+            const Text(
               'Andrian Hidayat',
               style: TextStyle(
                 fontSize: 20,
@@ -195,22 +201,6 @@ class HomeView extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.analytics_outlined, size: 18),
-              label: const Text('Analisis Detail'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF065F46),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-              ),
-            ),
-          ),
         ],
       ),
     );
@@ -249,7 +239,7 @@ class HomeView extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppColors.textPrimary,
@@ -281,7 +271,7 @@ class HomeView extends StatelessWidget {
       children: [
         Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
             color: AppColors.textPrimary,
@@ -444,6 +434,7 @@ class HomeView extends StatelessWidget {
     );
   }
 
+  // DI SINI POTONGAN KODE TRANSAKSI BARU ANDA DIAPLIKASIKAN
   Widget _buildRecentActivityList() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -454,49 +445,81 @@ class HomeView extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildActivityItem(
-            'Supermarket Harmoni',
-            'Belanja Bulanan • 10:24 WIB',
-            '- Rp 450.000',
-            Colors.red,
-            Icons.shopping_bag_outlined,
+          _buildTransactionRow(
+            '02:30 PM',
+            'Whole Foods Market',
+            'Groceries',
+            'Chase •• 4291',
+            '-124.50',
+            isExpense: true,
           ),
           const Divider(height: 1),
-          _buildActivityItem(
-            'Transfer Masuk',
-            'Dividen Saham • Kemarin',
-            '+ Rp 1.200.000',
-            Colors.teal,
-            Icons.account_balance_outlined,
+          _buildTransactionRow(
+            '10:15 AM',
+            'Salary Deposit',
+            'Income',
+            'Savings •• 8820',
+            '+6,200.00',
+            isExpense: false,
           ),
           const Divider(height: 1),
-          _buildActivityItem(
-            'Kedai Kopi Pagi',
-            'Gaya Hidup • Kemarin',
-            '- Rp 35.000',
-            Colors.red,
-            Icons.coffee_outlined,
+          _buildTransactionRow(
+            '08:00 PM',
+            'Shell Gas Station',
+            'Transport',
+            'Chase •• 4291',
+            '-58.20',
+            isExpense: true,
           ),
           const Divider(height: 1),
-          _buildActivityItem(
-            'PLN Pascabayar',
-            'Utilitas • 2 Hari Lalu',
-            '- Rp 850.000',
-            Colors.red,
-            Icons.bolt,
+          _buildTransactionRow(
+            '01:45 PM',
+            'La Boulange Cafe',
+            'Dining',
+            'Chase •• 4291',
+            '-22.40',
+            isExpense: true,
+          ),
+          const Divider(height: 1),
+          _buildTransactionRow(
+            '09:12 AM',
+            'Pacific Gas & Electric',
+            'Utilities',
+            'Bank Transfer',
+            '-145.00',
+            isExpense: true,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActivityItem(
-    String title,
-    String subtitle,
-    String amount,
-    Color amountColor,
-    IconData icon,
-  ) {
+  // Method pembantu baru untuk menyusun visual item transaksi di atas
+  Widget _buildTransactionRow(
+    String time,
+    String merchant,
+    String category,
+    String paymentMethod,
+    String amount, {
+    required bool isExpense,
+  }) {
+    IconData getIcon() {
+      switch (category.toLowerCase()) {
+        case 'groceries':
+          return Icons.shopping_bag_outlined;
+        case 'income':
+          return Icons.account_balance_outlined;
+        case 'transport':
+          return Icons.directions_car_outlined;
+        case 'dining':
+          return Icons.restaurant_outlined;
+        case 'utilities':
+          return Icons.bolt;
+        default:
+          return Icons.receipt_long_outlined;
+      }
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
@@ -507,7 +530,11 @@ class HomeView extends StatelessWidget {
               color: AppColors.surfaceContainer,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, color: const Color(0xFF0C54BE), size: 20),
+            child: Icon(
+              getIcon(),
+              color: isExpense ? AppColors.secondary : const Color(0xFF0C54BE),
+              size: 20,
+            ),
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -515,7 +542,7 @@ class HomeView extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  merchant,
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
@@ -523,7 +550,7 @@ class HomeView extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  subtitle,
+                  '$category • $paymentMethod • $time',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
@@ -537,7 +564,7 @@ class HomeView extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 14,
-              color: amountColor,
+              color: isExpense ? AppColors.error : const Color(0xFF10B981),
             ),
           ),
         ],
