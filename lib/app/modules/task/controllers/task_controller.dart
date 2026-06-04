@@ -156,14 +156,19 @@ class TaskController extends GetxController {
     editTaskId.value = '';
     titleController.clear();
     descriptionController.clear();
-    
-    if (categories.isNotEmpty) {
-      selectedFormCategoryId.value = categories.first.id ?? '';
-    } else {
-      selectedFormCategoryId.value = '';
-    }
     selectedPriority.value = 'medium';
     selectedFormDueDate.value = selectedDate.value;
+    
+    // Refresh categories from database so new/edited categories immediately appear
+    fetchCategories().then((_) {
+      if (categories.isNotEmpty) {
+        if (selectedFormCategoryId.value.isEmpty || !categories.any((c) => c.id == selectedFormCategoryId.value)) {
+          selectedFormCategoryId.value = categories.first.id ?? '';
+        }
+      } else {
+        selectedFormCategoryId.value = '';
+      }
+    });
   }
 
   void prepareEditForm(TaskModel task) {
@@ -174,6 +179,9 @@ class TaskController extends GetxController {
     selectedFormCategoryId.value = task.categoryId ?? '';
     selectedPriority.value = task.priority;
     selectedFormDueDate.value = task.dueDate;
+    
+    // Refresh categories from database so new/edited categories immediately appear
+    fetchCategories();
   }
 
   Future<void> selectFormDate(BuildContext context) async {
