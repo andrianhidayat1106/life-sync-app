@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 import 'package:lifesync_app/core/widgets/header.dart';
 import '../../../../core/constants/app_colors.dart';
 
-class ProjectView extends StatelessWidget {
+import '../controllers/project_controller.dart';
+
+class ProjectView extends GetView<ProjectController> {
   const ProjectView({super.key});
 
   @override
@@ -24,7 +26,7 @@ class ProjectView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Header(title: "Andrian Hidayat"),
+                    Obx(() => Header(title: controller.getUserFullName())),
                     const SizedBox(height: 24),
                     const Text(
                       'Proyek Berjalan',
@@ -35,7 +37,7 @@ class ProjectView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Text(
+                    const Text(
                       'Pantau kemajuan dan kelola sumber daya proyek Anda dengan efisien.',
                       style: TextStyle(
                         fontSize: 14,
@@ -48,37 +50,61 @@ class ProjectView extends StatelessWidget {
               ),
               const SizedBox(height: 32),
 
-              // Secondary Projects List
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  children: [
-                    _buildProjectCard(
-                      'Redesain UI Harmoni',
-                      'Pembaruan sistem desain untuk aplikasi mobile agar lebih selaras dengan brand identity baru.',
-                      0.40,
-                      '40%',
-                      '5 Tugas Tersisa',
+              // Dynamic Projects List
+              Obx(() {
+                if (controller.isLoading.value) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40.0),
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF065F46)),
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildProjectCard(
-                      'Audit Keamanan Tahunan',
-                      'Pemeriksaan menyeluruh terhadap protokol keamanan internal dan penetrasi sistem.',
-                      0.90,
-                      '90%',
-                      '2 Tugas Tersisa',
+                  );
+                }
+
+                final list = controller.projects;
+                if (list.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40.0),
+                      child: Text(
+                        'Tidak ada proyek untuk ditampilkan',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 15,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildProjectCard(
-                      'Optimasi Database SQL',
-                      'Meningkatkan kecepatan query dan efisiensi penyimpanan untuk laporan bulanan.',
-                      0.15,
-                      '15%',
-                      '18 Tugas Tersisa',
-                    ),
-                  ],
-                ),
-              ),
+                  );
+                }
+
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: list.map((project) {
+                      final projectId = project.id ?? '';
+                      final progress = controller.getProgressPercentage(projectId);
+                      final progressLabel = "${(progress * 100).toStringAsFixed(0)}%";
+                      
+                      final remaining = controller.getRemainingTasks(projectId);
+                      final total = controller.getTotalTasks(projectId);
+                      final tasksLabel = "$remaining Tugas Tersisa (Total: $total)";
+
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _buildProjectCard(
+                          project.name,
+                          project.description ?? 'Tidak ada deskripsi',
+                          progress,
+                          progressLabel,
+                          tasksLabel,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                );
+              }),
               const SizedBox(height: 32),
 
               // External Project Card
