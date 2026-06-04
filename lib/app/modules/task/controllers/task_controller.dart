@@ -11,7 +11,7 @@ class TaskController extends GetxController {
   final CategoryProvider _categoryProvider = CategoryProvider();
   final CacheService _cacheService = Get.find<CacheService>();
 
-  // State reaktif
+  // State reaktif utama
   final tasks = <TaskModel>[].obs;
   final categories = <CategoryModel>[].obs;
   final isLoading = false.obs;
@@ -19,6 +19,17 @@ class TaskController extends GetxController {
   final selectedDate = DateTime.now().obs;
   final selectedCategoryId = ''.obs;
   final weekDays = <DateTime>[].obs;
+
+  // Form states & controllers
+  final titleController = TextEditingController();
+  final descriptionController = TextEditingController();
+  
+  final isEditMode = false.obs;
+  final editTaskId = ''.obs;
+  final selectedFormCategoryId = ''.obs;
+  final selectedPriority = 'medium'.obs; // 'low', 'medium', 'high'
+  final selectedFormDueDate = Rx<DateTime?>(null);
+  final selectedFormTime = Rx<TimeOfDay?>(null);
 
   @override
   void onInit() {
@@ -47,7 +58,6 @@ class TaskController extends GetxController {
 
   Future<void> fetchCategories() async {
     final fetched = await _categoryProvider.fetchAllCategories();
-    // Filter kategori produktivitas (type = 'general')
     final generalCategories = fetched.where((cat) => cat.type == 'general').toList();
     categories.assignAll(generalCategories);
   }
@@ -58,7 +68,7 @@ class TaskController extends GetxController {
   }
 
   void updateWeekDays(DateTime date) {
-    int currentWeekday = date.weekday; // 1 = Monday, 7 = Sunday
+    int currentWeekday = date.weekday;
     DateTime monday = date.subtract(Duration(days: currentWeekday - 1));
     weekDays.value = List.generate(7, (index) => monday.add(Duration(days: index)));
   }
@@ -78,7 +88,7 @@ class TaskController extends GetxController {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: const ColorScheme.light(
-              primary: Color(0xFF065F46), // Emerald Green
+              primary: Color(0xFF065F46),
               onPrimary: Colors.white,
               onSurface: Colors.black,
             ),
@@ -99,7 +109,210 @@ class TaskController extends GetxController {
     selectDate(DateTime.now());
   }
 
-  // Helper date matching
+  // Form Management
+  void prepareCreateForm() {
+    isEditMode.value = false;
+    editTaskId.value = '';
+    titleController.clear();
+    descriptionController.clear();
+    
+    if (categories.isNotEmpty) {
+      selectedFormCategoryId.value = categories.first.id ?? '';
+    } else {
+      selectedFormCategoryId.value = '';
+    }
+    selectedPriority.value = 'medium';
+    selectedFormDueDate.value = selectedDate.value;
+    selectedFormTime.value = null;
+  }
+
+  void prepareEditForm(TaskModel task) {
+    isEditMode.value = true;
+    editTaskId.value = task.id ?? '';
+    titleController.text = task.title;
+    descriptionController.text = task.description ?? '';
+    selectedFormCategoryId.value = task.categoryId ?? '';
+    selectedPriority.value = task.priority;
+    selectedFormDueDate.value = task.dueDate;
+    
+    if (task.taskTime != null) {
+      final parts = task.taskTime!.split(':');
+      if (parts.length >= 2) {
+        selectedFormTime.value = TimeOfDay(
+          hour: int.tryParse(parts[0]) ?? 0,
+          minute: int.tryParse(parts[1]) ?? 0,
+        );
+      } else {
+        selectedFormTime.value = null;
+      }
+    } else {
+      selectedFormTime.value = null;
+    }
+  }
+
+  Future<void> selectFormDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: selectedFormDueDate.value ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2101),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF065F46),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF065F46)),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      selectedFormDueDate.value = picked;
+    }
+  }
+
+  Future<void> selectFormTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: selectedFormTime.value ?? TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF065F46),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(foregroundColor: const Color(0xFF065F46)),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      selectedFormTime.value = picked;
+    }
+  }
+
+  Future<void> saveTask() async {
+    final title = titleController.text.trim();
+    if (title.isEmpty) {
+      Get.rawSnackbar(
+        title: 'Validasi Gagal',
+        message: 'Judul tugas tidak boleh kosong',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    if (selectedFormCategoryId.value.isEmpty) {
+      Get.rawSnackbar(
+        title: 'Validasi Gagal',
+        message: 'Kategori tugas tidak boleh kosong',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    if (selectedFormDueDate.value == null) {
+      Get.rawSnackbar(
+        title: 'Validasi Gagal',
+        message: 'Tenggat waktu harus diisi',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    try {
+      isLoading.value = true;
+
+      String? taskTimeStr;
+      if (selectedFormTime.value != null) {
+        final t = selectedFormTime.value!;
+        taskTimeStr = "${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}:00";
+      }
+
+      // Cari status penyelesaian jika dalam mode edit
+      final existingTask = isEditMode.value
+          ? tasks.firstWhereOrNull((t) => t.id == editTaskId.value)
+          : null;
+      final isCompletedVal = existingTask?.isCompleted ?? false;
+      final finishedAtVal = existingTask?.finishedAt;
+
+      final task = TaskModel(
+        id: isEditMode.value ? editTaskId.value : null,
+        title: title,
+        description: descriptionController.text.trim().isEmpty ? null : descriptionController.text.trim(),
+        categoryId: selectedFormCategoryId.value,
+        priority: selectedPriority.value,
+        dueDate: selectedFormDueDate.value,
+        taskTime: taskTimeStr,
+        isCompleted: isCompletedVal,
+        finishedAt: finishedAtVal,
+      );
+
+      if (isEditMode.value) {
+        final updated = await _taskProvider.updateTask(task);
+        final idx = tasks.indexWhere((t) => t.id == editTaskId.value);
+        if (idx != -1) {
+          tasks[idx] = updated;
+        }
+      } else {
+        final created = await _taskProvider.createTask(task);
+        tasks.add(created);
+      }
+
+      await fetchTasks(); // Refresh tasks
+
+      Get.back();
+      Get.rawSnackbar(
+        title: 'Sukses',
+        message: isEditMode.value ? 'Tugas berhasil diperbarui' : 'Tugas berhasil ditambahkan',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.rawSnackbar(
+        title: 'Gagal Menyimpan Tugas',
+        message: e.toString().replaceAll('Exception: ', ''),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> deleteTaskFromForm() async {
+    if (editTaskId.value.isEmpty) return;
+    try {
+      isLoading.value = true;
+      await _taskProvider.deleteTask(editTaskId.value);
+      tasks.removeWhere((t) => t.id == editTaskId.value);
+      Get.back();
+      Get.rawSnackbar(
+        title: 'Sukses',
+        message: 'Tugas berhasil dihapus',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      Get.rawSnackbar(
+        title: 'Gagal Menghapus Tugas',
+        message: e.toString().replaceAll('Exception: ', ''),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Date Matching Helper
   bool isSameDate(DateTime a, DateTime b) {
     return a.year == b.year && a.month == b.month && a.day == b.day;
   }
@@ -110,7 +323,7 @@ class TaskController extends GetxController {
     return dateA.isBefore(dateB);
   }
 
-  // Daftar tugas yang relevan untuk tanggal terpilih (Hari ini + Backlog)
+  // Tasks Filter
   List<TaskModel> get tasksForSelectedDate {
     final D = selectedDate.value;
     return tasks.where((task) {
@@ -120,15 +333,12 @@ class TaskController extends GetxController {
         return true;
       }
       if (isBeforeDate(due, D)) {
-        // Backlog / Overdue task:
-        // Tampilkan jika belum selesai, ATAU jika selesai pada/setelah tanggal terpilih D
         return task.finishedAt == null || !isBeforeDate(task.finishedAt!, D);
       }
       return false;
     }).toList();
   }
 
-  // Daftar tugas yang difilter dengan kategori terpilih
   List<TaskModel> get filteredTasks {
     final list = tasksForSelectedDate;
     if (selectedCategoryId.value.isEmpty) {
@@ -137,7 +347,7 @@ class TaskController extends GetxController {
     return list.where((t) => t.categoryId == selectedCategoryId.value).toList();
   }
 
-  // Kalkulasi Progres Harian (berdasarkan tasksForSelectedDate sebelum difilter kategori agar global)
+  // Progress
   double get dailyProgressPercentage {
     final list = tasksForSelectedDate;
     if (list.isEmpty) return 0.0;
@@ -176,7 +386,6 @@ class TaskController extends GetxController {
     try {
       await _taskProvider.updateTask(updatedTask);
     } catch (e) {
-      // Revert if error
       tasks[index] = oldTask;
       Get.rawSnackbar(
         title: 'Gagal Memperbarui Tugas',
@@ -192,5 +401,12 @@ class TaskController extends GetxController {
 
   String getUserAvatarUrl() {
     return _cacheService.read<String>('user_profile_picture') ?? '';
+  }
+
+  @override
+  void onClose() {
+    titleController.dispose();
+    descriptionController.dispose();
+    super.onClose();
   }
 }

@@ -90,6 +90,7 @@ class TaskView extends GetView<TaskController> {
       // Floating Action Button for New Task
       floatingActionButton: FloatingActionButton(
         onPressed: () {
+          controller.prepareCreateForm();
           Get.toNamed('/task/create');
         },
         backgroundColor: Colors.black,
@@ -418,6 +419,10 @@ class TaskView extends GetView<TaskController> {
               catColor,
               task.isCompleted,
               onToggle: () => controller.toggleTaskCompletion(task),
+              onEdit: () {
+                controller.prepareEditForm(task);
+                Get.toNamed('/task/create');
+              },
               priority: task.priority == 'high'
                   ? 'Prioritas Tinggi'
                   : (task.priority == 'medium' ? 'Prioritas Sedang' : 'Prioritas Rendah'),
@@ -441,6 +446,7 @@ class TaskView extends GetView<TaskController> {
     Color categoryText,
     bool isDone, {
     required VoidCallback onToggle,
+    required VoidCallback onEdit,
     String? priority,
     Color? priorityColor,
     String? time,
@@ -480,84 +486,87 @@ class TaskView extends GetView<TaskController> {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Category Tag
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: categoryBg,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    category,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: categoryText,
-                      letterSpacing: 0.5,
+            child: GestureDetector(
+              onTap: onEdit,
+              behavior: HitTestBehavior.opaque,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Category Tag
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: categoryBg,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      category,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: categoryText,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                // Title
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: isDone
-                        ? AppColors.textSecondary
-                        : AppColors.textPrimary,
-                    decoration: isDone ? TextDecoration.lineThrough : null,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                // Subtitle
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                if (finishedAtText != null) ...[
                   const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        size: 14,
-                        color: Color(0xFF065F46),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Selesai: $finishedAtText',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF065F46),
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  // Title
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: FontWeight.bold,
+                      color: isDone
+                          ? AppColors.textSecondary
+                          : AppColors.textPrimary,
+                      decoration: isDone ? TextDecoration.lineThrough : null,
+                    ),
                   ),
-                ],
-                if (priority != null && !isDone) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Icon(Icons.circle, size: 8, color: priorityColor ?? Colors.red),
-                      const SizedBox(width: 8),
-                      Text(
-                        priority,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: priorityColor ?? Colors.red,
-                          fontWeight: FontWeight.w600,
+                  const SizedBox(height: 4),
+                  // Subtitle
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  if (finishedAtText != null) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.check_circle_outline,
+                          size: 14,
+                          color: Color(0xFF065F46),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Selesai: $finishedAtText',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF065F46),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (priority != null && !isDone) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(Icons.circle, size: 8, color: priorityColor ?? Colors.red),
+                        const SizedBox(width: 8),
+                        Text(
+                          priority,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: priorityColor ?? Colors.red,
+                            fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
@@ -587,7 +596,8 @@ class TaskView extends GetView<TaskController> {
               ],
             ),
           ),
-        ],
+        ),
+      ],
       ),
     );
   }

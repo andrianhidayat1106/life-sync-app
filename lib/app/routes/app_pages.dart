@@ -114,7 +114,13 @@ class AppPages {
       page: () => const TaskView(),
       binding: TaskBinding(),
       middlewares: [AuthMiddleware()],
-      children: [GetPage(name: '/create', page: () => const TaskFormView())],
+      children: [
+        GetPage(
+          name: '/create',
+          page: () => const TaskFormView(),
+          binding: TaskBinding(),
+        ),
+      ],
     ),
     GetPage(
       name: _Paths.PROFILE,
