@@ -5,8 +5,23 @@ import '../../../../core/constants/app_colors.dart';
 import '../controllers/task_controller.dart';
 import 'package:lifesync_app/app/data/models/task_model.dart';
 
-class TaskView extends GetView<TaskController> {
+class TaskView extends StatefulWidget {
   const TaskView({super.key});
+
+  @override
+  State<TaskView> createState() => _TaskViewState();
+}
+
+class _TaskViewState extends State<TaskView> {
+  final TaskController controller = Get.find<TaskController>();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.scrollToSelectedDate();
+    });
+  }
 
   Color _parseColor(String hex) {
     if (hex.startsWith('#')) {
