@@ -39,7 +39,7 @@ class TransactionController extends GetxController {
       editTransaction = tx;
       isEditMode.value = true;
       isIncome.value = tx.type == 'income';
-      amountController.text = tx.amount.toStringAsFixed(0);
+      amountController.text = _formatNumberWithDots(tx.amount.toStringAsFixed(0));
       selectedCategoryId.value = tx.categoryId;
       selectedWalletId.value = tx.walletId;
       selectedDate.value = tx.transactionDate;
@@ -94,8 +94,7 @@ class TransactionController extends GetxController {
   }
 
   List<CategoryModel> get filteredCategories {
-    final targetType = isIncome.value ? 'income' : 'outcome';
-    return categories.where((c) => c.description == targetType).toList();
+    return categories;
   }
 
   Future<void> selectDate(BuildContext context) async {
@@ -136,7 +135,8 @@ class TransactionController extends GetxController {
       return;
     }
 
-    final amount = double.tryParse(amountText) ?? 0.0;
+    final cleanAmountText = amountText.replaceAll('.', '');
+    final amount = double.tryParse(cleanAmountText) ?? 0.0;
     if (amount <= 0) {
       Get.rawSnackbar(
         title: 'Validasi Gagal',
@@ -164,6 +164,44 @@ class TransactionController extends GetxController {
       return;
     }
 
+    // Validasi saldo jika tipe transaksi adalah Pengeluaran (outcome)
+    if (!isIncome.value) {
+      WalletModel? selectedWallet;
+      for (var w in wallets) {
+        if (w.id.toString() == selectedWalletId.value) {
+          selectedWallet = w;
+          break;
+        }
+      }
+
+      if (selectedWallet == null) {
+        Get.rawSnackbar(
+          title: 'Validasi Gagal',
+          message: 'Dompet tidak ditemukan',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
+      double availableBalance = selectedWallet.balance ?? 0.0;
+      // Jika mode edit dan dompetnya sama dengan dompet asal, kembalikan saldo lama sementara untuk perhitungan
+      if (isEditMode.value && 
+          editTransaction != null && 
+          editTransaction!.type == 'outcome' && 
+          editTransaction!.walletId == selectedWalletId.value) {
+        availableBalance += editTransaction!.amount;
+      }
+
+      if (amount > availableBalance) {
+        Get.rawSnackbar(
+          title: 'Validasi Gagal',
+          message: 'Saldo dompet tidak mencukupi untuk melakukan transaksi ini',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+    }
+
     try {
       isLoading.value = true;
 
@@ -177,10 +215,49 @@ class TransactionController extends GetxController {
         notes: notesController.text.trim().isEmpty ? null : notesController.text.trim(),
       );
 
-      if (isEditMode.value) {
+      if (isEditMode.value && editTransaction != null) {
+        final oldWalletId = editTransaction!.walletId;
+        final oldAmount = editTransaction!.amount;
+        final oldType = editTransaction!.type;
+        
+        final oldWallet = wallets.firstWhere((w) => w.id.toString() == oldWalletId);
+        double oldWalletNewBalance = oldWallet.balance ?? 0.0;
+        if (oldType == 'income') {
+          oldWalletNewBalance -= oldAmount;
+        } else {
+          oldWalletNewBalance += oldAmount;
+        }
+
+        final newWalletId = selectedWalletId.value;
+        final newWallet = wallets.firstWhere((w) => w.id.toString() == newWalletId);
+        
+        double newWalletNewBalance = (oldWalletId == newWalletId) ? oldWalletNewBalance : (newWallet.balance ?? 0.0);
+        if (isIncome.value) {
+          newWalletNewBalance += amount;
+        } else {
+          newWalletNewBalance -= amount;
+        }
+
         await _transactionProvider.updateTransaction(transaction);
+
+        if (oldWalletId != newWalletId) {
+          await _walletProvider.updateWallet(oldWallet.copyWith(balance: oldWalletNewBalance));
+          await _walletProvider.updateWallet(newWallet.copyWith(balance: newWalletNewBalance));
+        } else {
+          await _walletProvider.updateWallet(newWallet.copyWith(balance: newWalletNewBalance));
+        }
       } else {
+        final targetWalletId = selectedWalletId.value;
+        final targetWallet = wallets.firstWhere((w) => w.id.toString() == targetWalletId);
+        double targetWalletNewBalance = targetWallet.balance ?? 0.0;
+        if (isIncome.value) {
+          targetWalletNewBalance += amount;
+        } else {
+          targetWalletNewBalance -= amount;
+        }
+
         await _transactionProvider.createTransaction(transaction);
+        await _walletProvider.updateWallet(targetWallet.copyWith(balance: targetWalletNewBalance));
       }
 
       // Refresh controller utama
@@ -202,6 +279,22 @@ class TransactionController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  String _formatNumberWithDots(String value) {
+    String cleanText = value.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanText.isEmpty) return '';
+    String formatted = '';
+    int count = 0;
+    for (int i = cleanText.length - 1; i >= 0; i--) {
+      formatted = cleanText[i] + formatted;
+      count++;
+      if (count == 3 && i > 0) {
+        formatted = '.$formatted';
+        count = 0;
+      }
+    }
+    return formatted;
   }
 
   @override

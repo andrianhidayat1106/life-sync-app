@@ -21,21 +21,53 @@ class TransactionView extends GetView<WalletController> {
 
   IconData _getIconData(String? iconName) {
     switch (iconName) {
+      // New category icons
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'airplanemode_active':
+        return Icons.airplanemode_active;
+      case 'shopping_cart':
+        return Icons.shopping_cart;
+      case 'home':
+        return Icons.home;
+      case 'work':
+        return Icons.work;
+      case 'payments':
+        return Icons.payments;
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'fitness_center':
+        return Icons.fitness_center;
+      case 'school':
+        return Icons.school;
+
+      // Old / fallback category icons
       case 'account_balance_wallet':
+      case 'wallet':
         return Icons.account_balance_wallet_outlined;
       case 'trending_up':
+      case 'salary':
         return Icons.trending_up;
-      case 'restaurant':
+      case 'restaurant_outlined':
+      case 'food':
         return Icons.restaurant_outlined;
       case 'shopping_bag':
+      case 'shopping_bag_outlined':
+      case 'shopping':
         return Icons.shopping_bag_outlined;
       case 'directions_car':
+      case 'directions_car_outlined':
+      case 'transport':
         return Icons.directions_car_outlined;
       case 'medical_services':
+      case 'medical_services_outlined':
+      case 'health':
         return Icons.medical_services_outlined;
       case 'bolt':
+      case 'bills':
         return Icons.bolt;
       case 'more_horiz':
+      case 'others':
       default:
         return Icons.more_horiz;
     }

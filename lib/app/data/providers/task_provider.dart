@@ -1,61 +1,69 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:lifesync_app/core/services/supabase_service.dart';
-import 'package:lifesync_app/app/data/models/wallet_model.dart';
+import 'package:lifesync_app/app/data/models/task_model.dart';
 
-class WalletProvider {
+class TaskProvider {
   final SupabaseClient _client = Get.find<SupabaseService>().client;
 
-  Future<List<WalletModel>> fetchWallets() async {
+  Future<List<TaskModel>> fetchTasks() async {
     final user = _client.auth.currentUser;
     if (user == null) {
       throw Exception("User tidak terautentikasi");
     }
 
     final response = await _client
-        .from('wallets')
+        .from('tasks')
         .select()
         .eq('user_id', user.id)
-        .order('id', ascending: true);
+        .order('due_date', ascending: true);
 
     return (response as List)
-        .map((json) => WalletModel.fromJson(json as Map<String, dynamic>))
+        .map((json) => TaskModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
-  Future<WalletModel> createWallet(WalletModel wallet) async {
+  Future<TaskModel> createTask(TaskModel task) async {
     final user = _client.auth.currentUser;
     if (user == null) {
       throw Exception("User tidak terautentikasi");
     }
 
-    // Set user_id dari sesi saat ini secara otomatis
-    final walletData = wallet.copyWith(userId: user.id).toJson();
+    final data = task.copyWith(userId: user.id).toJson();
 
     final response = await _client
-        .from('wallets')
-        .insert(walletData)
+        .from('tasks')
+        .insert(data)
         .select()
         .single();
 
-    return WalletModel.fromJson(response);
+    return TaskModel.fromJson(response);
   }
 
-  Future<WalletModel> updateWallet(WalletModel wallet) async {
+  Future<TaskModel> updateTask(TaskModel task) async {
     final user = _client.auth.currentUser;
     if (user == null) {
       throw Exception("User tidak terautentikasi");
     }
 
-    final data = wallet.toJson();
+    final data = task.toJson();
 
     final response = await _client
-        .from('wallets')
+        .from('tasks')
         .update(data)
-        .eq('id', wallet.id!)
+        .eq('id', task.id!)
         .select()
         .single();
 
-    return WalletModel.fromJson(response);
+    return TaskModel.fromJson(response);
+  }
+
+  Future<void> deleteTask(String id) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception("User tidak terautentikasi");
+    }
+
+    await _client.from('tasks').delete().eq('id', id);
   }
 }

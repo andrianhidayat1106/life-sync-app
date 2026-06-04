@@ -131,6 +131,34 @@ class WalletController extends GetxController {
   Future<void> deleteTransaction(String id) async {
     try {
       isLoading.value = true;
+
+      TransactionModel? tx;
+      for (var t in transactions) {
+        if (t.id == id) {
+          tx = t;
+          break;
+        }
+      }
+
+      if (tx != null) {
+        WalletModel? wallet;
+        for (var w in wallets) {
+          if (w.id.toString() == tx.walletId) {
+            wallet = w;
+            break;
+          }
+        }
+        if (wallet != null) {
+          double newBalance = wallet.balance ?? 0.0;
+          if (tx.type == 'income') {
+            newBalance -= tx.amount;
+          } else {
+            newBalance += tx.amount;
+          }
+          await _walletProvider.updateWallet(wallet.copyWith(balance: newBalance));
+        }
+      }
+
       await _transactionProvider.deleteTransaction(id);
       await refreshData();
       Get.rawSnackbar(

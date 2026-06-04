@@ -2,9 +2,48 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lifesync_app/core/widgets/header.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../controllers/task_controller.dart';
+import 'package:lifesync_app/app/data/models/task_model.dart';
 
-class TaskView extends StatelessWidget {
+class TaskView extends GetView<TaskController> {
   const TaskView({super.key});
+
+  Color _parseColor(String hex) {
+    if (hex.startsWith('#')) {
+      final cleanHex = hex.replaceAll('#', '');
+      if (cleanHex.length == 6) {
+        return Color(int.parse('FF$cleanHex', radix: 16));
+      } else if (cleanHex.length == 8) {
+        return Color(int.parse(cleanHex, radix: 16));
+      }
+    } else if (hex.length == 6) {
+      return Color(int.parse('FF$hex', radix: 16));
+    } else if (hex.length == 8) {
+      return Color(int.parse(hex, radix: 16));
+    }
+    return const Color(0xFF6B7280);
+  }
+
+  String _formatTaskTime(String timeStr) {
+    final parts = timeStr.split(':');
+    if (parts.length >= 2) {
+      return '${parts[0]}:${parts[1]} WIB';
+    }
+    return '$timeStr WIB';
+  }
+
+  String _formatFinishedAt(DateTime dt) {
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    
+    final List<String> monthsShort = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+      'Jul', 'Agt', 'Sep', 'Okt', 'Nov', 'Des'
+    ];
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = monthsShort[dt.month - 1];
+    return '$day $month ${dt.year}, $hour:$minute WIB';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,23 +57,23 @@ class TaskView extends StatelessWidget {
             children: [
               // Header Section
               Padding(
-                padding: EdgeInsetsGeometry.only(
+                padding: const EdgeInsets.only(
                   bottom: 24,
                   left: 24,
                   right: 24,
                 ),
-                child: Header(title: "Andrian Hidayat"),
+                child: Header(title: controller.getUserFullName()),
               ),
 
-              // Calendar Navigation with "Hari Ini" Reset
-              _buildCalendarNav(),
+              // Calendar Navigation with DatePicker & "Hari Ini" Reset
+              _buildCalendarNav(context),
               const SizedBox(height: 32),
 
               // Daily Progress Card
               _buildProgressCard(),
               const SizedBox(height: 32),
 
-              // Filter Chips
+              // Filter Chips (Productivity Kategori)
               _buildFilterChips(),
               const SizedBox(height: 24),
 
@@ -59,42 +98,7 @@ class TaskView extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            children: [
-              const CircleAvatar(
-                radius: 20,
-                backgroundImage: NetworkImage(
-                  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Text(
-                'Harmoni Hidup',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none_outlined),
-            color: AppColors.textPrimary,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCalendarNav() {
+  Widget _buildCalendarNav(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -104,22 +108,32 @@ class TaskView extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               // Month Picker with Arrow
-              Row(
-                children: [
-                  const Text(
-                    'Oktober 2023',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+              GestureDetector(
+                onTap: () => controller.selectDateFromPicker(context),
+                child: Row(
+                  children: [
+                    Obx(() {
+                      final date = controller.selectedDate.value;
+                      final List<String> monthsFull = [
+                        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                      ];
+                      return Text(
+                        '${monthsFull[date.month - 1]} ${date.year}',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      );
+                    }),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.keyboard_arrow_down,
+                      color: AppColors.textPrimary.withOpacity(0.6),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    color: AppColors.textPrimary.withOpacity(0.6),
-                  ),
-                ],
+                  ],
+                ),
               ),
               // Reset "Hari Ini" Button
               Container(
@@ -128,7 +142,7 @@ class TaskView extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: TextButton.icon(
-                  onPressed: () {},
+                  onPressed: () => controller.resetToToday(),
                   icon: const Icon(
                     Icons.calendar_today_outlined,
                     size: 16,
@@ -157,22 +171,25 @@ class TaskView extends StatelessWidget {
         // Horizontal Date Scroller
         SizedBox(
           height: 94,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            children: [
-              _buildDateItem('Sen', '23', false),
-              _buildDateItem('Sel', '24', false),
-              _buildDateItem(
-                'Rab',
-                '25',
-                true,
-              ), // Selected Date (Emerald Green)
-              _buildDateItem('Kam', '26', false),
-              _buildDateItem('Jum', '27', false),
-              _buildDateItem('Sab', '28', false),
-            ],
-          ),
+          child: Obx(() {
+            final List<String> weekdaysShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+            final weekDaysList = controller.weekDays;
+            return ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: weekDaysList.length,
+              itemBuilder: (context, index) {
+                final dayDate = weekDaysList[index];
+                final dayName = weekdaysShort[dayDate.weekday - 1];
+                final dateStr = dayDate.day.toString();
+                final isSelected = controller.isSameDate(dayDate, controller.selectedDate.value);
+                return GestureDetector(
+                  onTap: () => controller.selectDate(dayDate),
+                  child: _buildDateItem(dayName, dateStr, isSelected),
+                );
+              },
+            );
+          }),
         ),
       ],
     );
@@ -253,78 +270,99 @@ class TaskView extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Obx(() {
+          final pct = controller.dailyProgressPercentage;
+          final completed = controller.completedTasksCount;
+          final total = controller.totalTasksCount;
+          final pctText = "${(pct * 100).toStringAsFixed(0)}%";
+          final subText = total == 0
+              ? 'Tidak ada tugas untuk hari ini.'
+              : 'Kamu telah menyelesaikan $completed dari $total tugas hari ini. ${pct == 1.0 ? "Luar biasa!" : "Sedikit lagi!"}';
+          
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Progres Harian',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      subText,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 20),
+              Stack(
+                alignment: Alignment.center,
                 children: [
-                  const Text(
-                    'Progres Harian',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: CircularProgressIndicator(
+                      value: total == 0 ? 0.0 : pct,
+                      strokeWidth: 8,
+                      backgroundColor: const Color(0xFFEFF4FF),
+                      strokeCap: StrokeCap.round,
+                      valueColor: const AlwaysStoppedAnimation<Color>(
+                        Color(0xFF065F46),
+                      ),
                     ),
                   ),
-                  const SizedBox(height: 8),
                   Text(
-                    'Kamu telah menyelesaikan 8 dari 12 tugas hari ini. Sedikit lagi!',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.5,
+                    total == 0 ? '0%' : pctText,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF065F46),
                     ),
                   ),
                 ],
               ),
-            ),
-            const SizedBox(width: 20),
-            Stack(
-              alignment: Alignment.center,
-              children: [
-                SizedBox(
-                  width: 72,
-                  height: 72,
-                  child: CircularProgressIndicator(
-                    value: 0.66,
-                    strokeWidth: 8,
-                    backgroundColor: const Color(0xFFEFF4FF),
-                    strokeCap: StrokeCap.round,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Color(0xFF065F46),
-                    ),
-                  ),
-                ),
-                const Text(
-                  '66%',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF065F46),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+            ],
+          );
+        }),
       ),
     );
   }
 
   Widget _buildFilterChips() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Row(
-        children: [
-          _buildChip('Semua', true),
-          _buildChip('Keuangan', false),
-          _buildChip('Proyek', false),
-          _buildChip('Pribadi', false),
-        ],
-      ),
-    );
+    return Obx(() {
+      final cats = controller.categories;
+      final selectedId = controller.selectedCategoryId.value;
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Row(
+          children: [
+            GestureDetector(
+              onTap: () => controller.selectedCategoryId.value = '',
+              child: _buildChip('Semua', selectedId.isEmpty),
+            ),
+            ...cats.map((cat) {
+              final isSelected = selectedId == cat.id;
+              return GestureDetector(
+                onTap: () => controller.selectedCategoryId.value = cat.id ?? '',
+                child: _buildChip(cat.name, isSelected),
+              );
+            }).toList(),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildChip(String label, bool isSelected) {
@@ -349,48 +387,49 @@ class TaskView extends StatelessWidget {
   Widget _buildTaskList() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        children: [
-          _buildTaskItem(
-            'Bayar Tagihan Listrik',
-            'Selesaikan sebelum jam 17:00 WIB.',
-            'KEUANGAN',
-            const Color(0xFFDBEAFE),
-            const Color(0xFF1E40AF),
-            true, // Completed
-            trailingIcon: Icons.more_vert,
-          ),
-          _buildTaskItem(
-            'Review Desain Sprint 2',
-            'Hubungi tim UI/UX untuk sinkronisasi aset.',
-            'PROYEK',
-            const Color(0xFFF3E8FF),
-            const Color(0xFF7E22CE),
-            false,
-            priority: 'Prioritas Tinggi',
-            trailingIcon: Icons.outlined_flag,
-          ),
-          _buildTaskItem(
-            'Latihan Yoga Sore',
-            '30 menit sesi vinyasa flow di rumah.',
-            'PRIBADI',
-            const Color(0xFFDCFCE7),
-            const Color(0xFF15803D),
-            false,
-            time: '16:30 WIB',
-            trailingIcon: Icons.access_time,
-          ),
-          _buildTaskItem(
-            'Kirim Laporan Mingguan',
-            'Dikirim ke Manajer Proyek melalui Email.',
-            'PROYEK',
-            const Color(0xFFF3E8FF),
-            const Color(0xFF7E22CE),
-            true,
-            trailingIcon: Icons.check_circle_outline,
-          ),
-        ],
-      ),
+      child: Obx(() {
+        final list = controller.filteredTasks;
+        if (list.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 40.0),
+              child: Text(
+                'Tidak ada tugas untuk ditampilkan',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 15,
+                ),
+              ),
+            ),
+          );
+        }
+        return Column(
+          children: list.map((task) {
+            final cat = controller.categories.firstWhereOrNull((c) => c.id == task.categoryId);
+            final catName = cat?.name ?? 'UMUM';
+            final catColorHex = cat?.colorHex ?? '#FF6B7280';
+            final catColor = _parseColor(catColorHex);
+
+            return _buildTaskItem(
+              task.title,
+              task.description ?? 'Tidak ada deskripsi',
+              catName.toUpperCase(),
+              catColor.withOpacity(0.12),
+              catColor,
+              task.isCompleted,
+              onToggle: () => controller.toggleTaskCompletion(task),
+              priority: task.priority == 'high'
+                  ? 'Prioritas Tinggi'
+                  : (task.priority == 'medium' ? 'Prioritas Sedang' : 'Prioritas Rendah'),
+              priorityColor: task.priority == 'high'
+                  ? Colors.red
+                  : (task.priority == 'medium' ? Colors.orange : Colors.blue),
+              time: task.taskTime != null ? _formatTaskTime(task.taskTime!) : null,
+              finishedAtText: task.finishedAt != null ? _formatFinishedAt(task.finishedAt!) : null,
+            );
+          }).toList(),
+        );
+      }),
     );
   }
 
@@ -401,9 +440,11 @@ class TaskView extends StatelessWidget {
     Color categoryBg,
     Color categoryText,
     bool isDone, {
+    required VoidCallback onToggle,
     String? priority,
+    Color? priorityColor,
     String? time,
-    IconData? trailingIcon,
+    String? finishedAtText,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -417,22 +458,25 @@ class TaskView extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Custom Checkbox
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: isDone ? const Color(0xFF065F46) : Colors.transparent,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: isDone
-                    ? const Color(0xFF065F46)
-                    : AppColors.textSecondary.withOpacity(0.5),
-                width: 2,
+          GestureDetector(
+            onTap: onToggle,
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: isDone ? const Color(0xFF065F46) : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: isDone
+                      ? const Color(0xFF065F46)
+                      : AppColors.textSecondary.withOpacity(0.5),
+                  width: 2,
+                ),
               ),
+              child: isDone
+                  ? const Icon(Icons.check, size: 18, color: Colors.white)
+                  : null,
             ),
-            child: isDone
-                ? const Icon(Icons.check, size: 18, color: Colors.white)
-                : null,
           ),
           const SizedBox(width: 16),
           Expanded(
@@ -476,33 +520,54 @@ class TaskView extends StatelessWidget {
                 // Subtitle
                 Text(
                   subtitle,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.textSecondary,
                   ),
                 ),
-                if (priority != null) ...[
-                  const SizedBox(height: 12),
+                if (finishedAtText != null) ...[
+                  const SizedBox(height: 8),
                   Row(
                     children: [
-                      const Icon(Icons.circle, size: 8, color: Colors.red),
+                      const Icon(
+                        Icons.check_circle_outline,
+                        size: 14,
+                        color: Color(0xFF065F46),
+                      ),
                       const SizedBox(width: 8),
                       Text(
-                        priority,
+                        'Selesai: $finishedAtText',
                         style: const TextStyle(
                           fontSize: 12,
-                          color: Colors.red,
+                          color: Color(0xFF065F46),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ],
-                if (time != null) ...[
+                if (priority != null && !isDone) ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Icon(
+                      Icon(Icons.circle, size: 8, color: priorityColor ?? Colors.red),
+                      const SizedBox(width: 8),
+                      Text(
+                        priority,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: priorityColor ?? Colors.red,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (time != null && !isDone) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Icon(
                         Icons.access_time,
                         size: 14,
                         color: AppColors.textSecondary,
@@ -510,7 +575,7 @@ class TaskView extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         time,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -522,8 +587,6 @@ class TaskView extends StatelessWidget {
               ],
             ),
           ),
-          if (trailingIcon != null)
-            Icon(trailingIcon, color: AppColors.textSecondary, size: 20),
         ],
       ),
     );

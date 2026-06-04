@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lifesync_app/app/modules/wallet/controllers/transaction_controller.dart';
 import 'package:lifesync_app/app/modules/wallet/controllers/wallet_controller.dart';
@@ -9,21 +10,53 @@ class TransactionFormView extends GetView<TransactionController> {
 
   IconData _getIconData(String? iconName) {
     switch (iconName) {
+      // New category icons
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'airplanemode_active':
+        return Icons.airplanemode_active;
+      case 'shopping_cart':
+        return Icons.shopping_cart;
+      case 'home':
+        return Icons.home;
+      case 'work':
+        return Icons.work;
+      case 'payments':
+        return Icons.payments;
+      case 'restaurant':
+        return Icons.restaurant;
+      case 'fitness_center':
+        return Icons.fitness_center;
+      case 'school':
+        return Icons.school;
+
+      // Old / fallback category icons
       case 'account_balance_wallet':
+      case 'wallet':
         return Icons.account_balance_wallet_outlined;
       case 'trending_up':
+      case 'salary':
         return Icons.trending_up;
-      case 'restaurant':
+      case 'restaurant_outlined':
+      case 'food':
         return Icons.restaurant_outlined;
       case 'shopping_bag':
+      case 'shopping_bag_outlined':
+      case 'shopping':
         return Icons.shopping_bag_outlined;
       case 'directions_car':
+      case 'directions_car_outlined':
+      case 'transport':
         return Icons.directions_car_outlined;
       case 'medical_services':
+      case 'medical_services_outlined':
+      case 'health':
         return Icons.medical_services_outlined;
       case 'bolt':
+      case 'bills':
         return Icons.bolt;
       case 'more_horiz':
+      case 'others':
       default:
         return Icons.more_horiz;
     }
@@ -156,6 +189,9 @@ class TransactionFormView extends GetView<TransactionController> {
                                 child: TextField(
                                   controller: controller.amountController,
                                   keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    ThousandsFormatter(),
+                                  ],
                                   textAlign: TextAlign.left,
                                   style: const TextStyle(
                                     fontSize: 56,
@@ -197,6 +233,7 @@ class TransactionFormView extends GetView<TransactionController> {
               const SizedBox(height: 16),
               Obx(() {
                 final list = controller.filteredCategories;
+                final selectedId = controller.selectedCategoryId.value;
                 if (list.isEmpty) {
                   return const Padding(
                     padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -210,13 +247,14 @@ class TransactionFormView extends GetView<TransactionController> {
                     itemCount: list.length,
                     itemBuilder: (context, index) {
                       final cat = list[index];
-                      final isSelected = controller.selectedCategoryId.value == cat.id;
+                      final isSelected = selectedId == cat.id;
                       return GestureDetector(
                         onTap: () => controller.selectedCategoryId.value = cat.id ?? '',
                         child: _buildCategoryItem(
                           _getIconData(cat.icon),
                           cat.name,
                           isSelected,
+                          cat.colorHex,
                         ),
                       );
                     },
@@ -364,7 +402,24 @@ class TransactionFormView extends GetView<TransactionController> {
     );
   }
 
-  Widget _buildCategoryItem(IconData icon, String label, bool isSelected) {
+  Color _parseColor(String hex) {
+    if (hex.startsWith('#')) {
+      final cleanHex = hex.replaceAll('#', '');
+      if (cleanHex.length == 6) {
+        return Color(int.parse('FF$cleanHex', radix: 16));
+      } else if (cleanHex.length == 8) {
+        return Color(int.parse(cleanHex, radix: 16));
+      }
+    } else if (hex.length == 6) {
+      return Color(int.parse('FF$hex', radix: 16));
+    } else if (hex.length == 8) {
+      return Color(int.parse(hex, radix: 16));
+    }
+    return const Color(0xFF1E293B);
+  }
+
+  Widget _buildCategoryItem(IconData icon, String label, bool isSelected, String colorHex) {
+    final catColor = _parseColor(colorHex);
     return Container(
       width: 80,
       margin: const EdgeInsets.only(right: 12),
@@ -373,13 +428,13 @@ class TransactionFormView extends GetView<TransactionController> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFFE0F7F1) : AppColors.surfaceContainer,
+              color: isSelected ? catColor.withOpacity(0.15) : AppColors.surfaceContainer,
               borderRadius: BorderRadius.circular(16),
-              border: isSelected ? Border.all(color: AppColors.secondary, width: 1.5) : null,
+              border: isSelected ? Border.all(color: catColor, width: 1.5) : null,
             ),
             child: Icon(
               icon,
-              color: isSelected ? AppColors.secondary : AppColors.textSecondary,
+              color: isSelected ? catColor : AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 8),
@@ -536,6 +591,38 @@ class TransactionFormView extends GetView<TransactionController> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class ThousandsFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    if (newValue.text.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+
+    // Hanya ambil angka
+    String cleanText = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (cleanText.isEmpty) {
+      return newValue.copyWith(text: '', selection: const TextSelection.collapsed(offset: 0));
+    }
+
+    // Tambahkan titik setiap 3 digit dari belakang
+    String formatted = '';
+    int count = 0;
+    for (int i = cleanText.length - 1; i >= 0; i--) {
+      formatted = cleanText[i] + formatted;
+      count++;
+      if (count == 3 && i > 0) {
+        formatted = '.$formatted';
+        count = 0;
+      }
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
     );
   }
 }
