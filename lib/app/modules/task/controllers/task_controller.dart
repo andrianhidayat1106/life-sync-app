@@ -358,15 +358,20 @@ class TaskController extends GetxController {
     return list.where((t) => t.categoryId == selectedCategoryId.value).toList();
   }
 
-  // Progress
+  // Progress and Completion Helpers
+  bool isTaskCompletedOnDate(TaskModel task, DateTime targetDate) {
+    if (!task.isCompleted || task.finishedAt == null) return false;
+    final finishedDate = DateTime(task.finishedAt!.year, task.finishedAt!.month, task.finishedAt!.day);
+    final target = DateTime(targetDate.year, targetDate.month, targetDate.day);
+    return !finishedDate.isAfter(target);
+  }
+
   double get dailyProgressPercentage {
     final list = tasksForSelectedDate;
     if (list.isEmpty) return 0.0;
 
     final D = selectedDate.value;
-    final completedCount = list.where((t) {
-      return t.finishedAt != null && isSameDate(t.finishedAt!, D);
-    }).length;
+    final completedCount = list.where((t) => isTaskCompletedOnDate(t, D)).length;
 
     return completedCount / list.length;
   }
@@ -375,14 +380,20 @@ class TaskController extends GetxController {
 
   int get completedTasksCount {
     final D = selectedDate.value;
-    return tasksForSelectedDate.where((t) {
-      return t.finishedAt != null && isSameDate(t.finishedAt!, D);
-    }).length;
+    return tasksForSelectedDate.where((t) => isTaskCompletedOnDate(t, D)).length;
   }
 
   Future<void> toggleTaskCompletion(TaskModel task) async {
-    final isCompleted = !task.isCompleted;
-    final finishedAt = isCompleted ? DateTime.now() : null;
+    final D = selectedDate.value;
+    final currentlyCompleted = isTaskCompletedOnDate(task, D);
+    
+    final isCompleted = !currentlyCompleted;
+    DateTime? finishedAt;
+    if (isCompleted) {
+      final now = DateTime.now();
+      finishedAt = DateTime(D.year, D.month, D.day, now.hour, now.minute, now.second);
+    }
+    
     final updatedTask = task.copyWith(
       isCompleted: isCompleted,
       finishedAt: finishedAt,

@@ -419,13 +419,15 @@ class _TaskViewState extends State<TaskView> {
             final catColorHex = cat?.colorHex ?? '#FF6B7280';
             final catColor = _parseColor(catColorHex);
 
+            final isDoneOnDate = controller.isTaskCompletedOnDate(task, controller.selectedDate.value);
+
             return _buildTaskItem(
               task.title,
               task.description ?? 'Tidak ada deskripsi',
               catName.toUpperCase(),
               catColor.withOpacity(0.12),
               catColor,
-              task.isCompleted,
+              isDoneOnDate,
               onToggle: () => controller.toggleTaskCompletion(task),
               onEdit: () {
                 controller.prepareEditForm(task);
@@ -437,7 +439,7 @@ class _TaskViewState extends State<TaskView> {
               priorityColor: task.priority == 'high'
                   ? Colors.red
                   : (task.priority == 'medium' ? Colors.orange : Colors.blue),
-              finishedAtText: (task.isCompleted && task.finishedAt != null) ? _formatFinishedAt(task.finishedAt!) : null,
+              finishedAtText: isDoneOnDate ? _formatFinishedAt(task.finishedAt!) : null,
             );
           }).toList(),
         );
