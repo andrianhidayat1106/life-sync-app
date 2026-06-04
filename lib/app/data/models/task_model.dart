@@ -72,6 +72,7 @@ class TaskModel {
     DateTime? createdAt,
     DateTime? updatedAt,
     DateTime? finishedAt,
+    bool clearFinishedAt = false,
   }) {
     return TaskModel(
       id: id ?? this.id,
@@ -85,7 +86,7 @@ class TaskModel {
       isCompleted: isCompleted ?? this.isCompleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
-      finishedAt: finishedAt ?? this.finishedAt,
+      finishedAt: clearFinishedAt ? null : (finishedAt ?? this.finishedAt),
     );
   }
 }

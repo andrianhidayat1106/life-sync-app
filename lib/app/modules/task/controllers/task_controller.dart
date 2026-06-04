@@ -327,6 +327,7 @@ class TaskController extends GetxController {
     final updatedTask = task.copyWith(
       isCompleted: isCompleted,
       finishedAt: finishedAt,
+      clearFinishedAt: !isCompleted,
     );
 
     final index = tasks.indexWhere((t) => t.id == task.id);

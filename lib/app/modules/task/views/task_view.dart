@@ -421,7 +421,7 @@ class TaskView extends GetView<TaskController> {
               priorityColor: task.priority == 'high'
                   ? Colors.red
                   : (task.priority == 'medium' ? Colors.orange : Colors.blue),
-              finishedAtText: task.finishedAt != null ? _formatFinishedAt(task.finishedAt!) : null,
+              finishedAtText: (task.isCompleted && task.finishedAt != null) ? _formatFinishedAt(task.finishedAt!) : null,
             );
           }).toList(),
         );
