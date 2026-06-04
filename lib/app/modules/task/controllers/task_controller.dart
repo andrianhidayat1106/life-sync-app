@@ -329,11 +329,20 @@ class TaskController extends GetxController {
   List<TaskModel> get tasksForSelectedDate {
     final D = selectedDate.value;
     return tasks.where((task) {
+      // 1. Tampilkan jika selesai pada tanggal terpilih D
+      if (task.finishedAt != null && isSameDate(task.finishedAt!, D)) {
+        return true;
+      }
+
       if (task.dueDate == null) return false;
       final due = task.dueDate!;
+
+      // 2. Tampilkan jika jatuh tempo pada tanggal terpilih D
       if (isSameDate(due, D)) {
         return true;
       }
+
+      // 3. Tampilkan jika jatuh tempo sebelum D (backlog) dan belum selesai saat hari D dimulai
       if (isBeforeDate(due, D)) {
         return task.finishedAt == null || !isBeforeDate(task.finishedAt!, D);
       }
