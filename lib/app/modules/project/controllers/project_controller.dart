@@ -30,10 +30,6 @@ class ProjectController extends GetxController {
     try {
       isLoading.value = true;
       
-      print("[ProjectController] loadData: calling fetchProjects...");
-      await fetchProjects();
-      print("[ProjectController] loadData: fetchProjects finished");
-      
       print("[ProjectController] loadData: calling fetchTasks...");
       await fetchTasks();
       print("[ProjectController] loadData: fetchTasks finished");
@@ -41,6 +37,10 @@ class ProjectController extends GetxController {
       print("[ProjectController] loadData: calling fetchCategories...");
       await fetchCategories();
       print("[ProjectController] loadData: fetchCategories finished");
+
+      print("[ProjectController] loadData: calling fetchProjects...");
+      await fetchProjects();
+      print("[ProjectController] loadData: fetchProjects finished");
       
       print("[ProjectController] loadData completed successfully. Projects count: ${projects.length}, Tasks count: ${tasks.length}, Categories count: ${categories.length}");
     } catch (e, stackTrace) {
