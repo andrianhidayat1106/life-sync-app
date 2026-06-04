@@ -175,8 +175,12 @@ class ProfileController extends GetxController {
 
   Future<void> logout() async {
     try {
-      // Sign out dari Supabase
-      await Supabase.instance.client.auth.signOut();
+      // Sign out dari Supabase dengan toleransi error jika sesi sudah tidak valid
+      try {
+        await Supabase.instance.client.auth.signOut();
+      } catch (e) {
+        print("[ProfileController] Supabase signOut error (ignoring): $e");
+      }
       
       // Hapus data lokal dari CacheService
       await _cacheService.clear();
