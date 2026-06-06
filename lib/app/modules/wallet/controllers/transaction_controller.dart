@@ -7,6 +7,7 @@ import 'package:lifesync_app/app/data/providers/category_provider.dart';
 import 'package:lifesync_app/app/data/models/wallet_model.dart';
 import 'package:lifesync_app/app/data/providers/wallet_provider.dart';
 import 'package:lifesync_app/app/modules/wallet/controllers/wallet_controller.dart';
+import 'package:lifesync_app/core/utils/ui_helper.dart';
 
 class TransactionController extends GetxController {
   final CategoryProvider _categoryProvider = CategoryProvider();
@@ -67,11 +68,7 @@ class TransactionController extends GetxController {
         fetchWalletsSilent(),
       ]);
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Memuat Form',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memuat Form: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -98,26 +95,10 @@ class TransactionController extends GetxController {
   }
 
   Future<void> selectDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
+    final DateTime? picked = await UIHelper.showCustomDatePicker(
       initialDate: selectedDate.value,
       firstDate: DateTime(2020),
       lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Colors.black,
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.black),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null && picked != selectedDate.value) {
       selectedDate.value = picked;
@@ -127,40 +108,24 @@ class TransactionController extends GetxController {
   Future<void> saveTransaction() async {
     final amountText = amountController.text.trim();
     if (amountText.isEmpty) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Nominal transaksi tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Nominal transaksi tidak boleh kosong');
       return;
     }
 
     final cleanAmountText = amountText.replaceAll('.', '');
     final amount = double.tryParse(cleanAmountText) ?? 0.0;
     if (amount <= 0) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Nominal harus lebih dari 0',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Nominal harus lebih dari 0');
       return;
     }
 
     if (selectedCategoryId.value.isEmpty) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Harap pilih kategori transaksi',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Harap pilih kategori transaksi');
       return;
     }
 
     if (selectedWalletId.value.isEmpty) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Harap pilih dompet transaksi',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Harap pilih dompet transaksi');
       return;
     }
 
@@ -175,11 +140,7 @@ class TransactionController extends GetxController {
       }
 
       if (selectedWallet == null) {
-        Get.rawSnackbar(
-          title: 'Validasi Gagal',
-          message: 'Dompet tidak ditemukan',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        UIHelper.showErrorSnackbar('Dompet tidak ditemukan');
         return;
       }
 
@@ -193,11 +154,7 @@ class TransactionController extends GetxController {
       }
 
       if (amount > availableBalance) {
-        Get.rawSnackbar(
-          title: 'Validasi Gagal',
-          message: 'Saldo dompet tidak mencukupi untuk melakukan transaksi ini',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        UIHelper.showErrorSnackbar('Saldo dompet tidak mencukupi untuk melakukan transaksi ini');
         return;
       }
     }
@@ -265,17 +222,9 @@ class TransactionController extends GetxController {
       await walletController.refreshData();
 
       Get.back();
-      Get.rawSnackbar(
-        title: 'Sukses',
-        message: isEditMode.value ? 'Transaksi berhasil diperbarui' : 'Transaksi berhasil ditambahkan',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar(isEditMode.value ? 'Transaksi berhasil diperbarui' : 'Transaksi berhasil ditambahkan');
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Menyimpan',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar(e.toString().replaceAll('Exception: ', ''));
     } finally {
       isLoading.value = false;
     }

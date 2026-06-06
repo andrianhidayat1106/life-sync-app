@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:lifesync_app/app/routes/app_pages.dart';
 import 'package:lifesync_app/core/services/cache_service.dart';
+import 'package:lifesync_app/core/utils/ui_helper.dart';
 
 class ProfileController extends GetxController {
   final CacheService _cacheService = Get.find<CacheService>();
@@ -89,18 +90,10 @@ class ProfileController extends GetxController {
         await _cacheService.write('user_profile_picture', localFile.path);
         profileImagePath.value = localFile.path;
 
-        Get.snackbar(
-          'Sukses',
-          'Foto profil berhasil diperbarui secara lokal',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        UIHelper.showSuccessSnackbar('Foto profil berhasil diperbarui secara lokal');
       }
     } catch (e) {
-      Get.snackbar(
-        'Gagal Memilih Foto',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+        UIHelper.showErrorSnackbar('Gagal Memilih Foto: $e');
     }
   }
 
@@ -108,17 +101,9 @@ class ProfileController extends GetxController {
     try {
       await _cacheService.remove('user_profile_picture');
       profileImagePath.value = '';
-      Get.snackbar(
-        'Sukses',
-        'Foto profil berhasil dihapus',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Foto profil berhasil dihapus');
     } catch (e) {
-      Get.snackbar(
-        'Gagal Menghapus Foto',
-        e.toString(),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menghapus Foto: $e');
     }
   }
 
@@ -127,11 +112,7 @@ class ProfileController extends GetxController {
     final newEmail = emailController.text.trim();
 
     if (newName.isEmpty || newEmail.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Nama dan Email tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Nama dan Email tidak boleh kosong');
       return;
     }
 
@@ -157,17 +138,9 @@ class ProfileController extends GetxController {
         );
       }
 
-      Get.snackbar(
-        'Sukses',
-        'Profil berhasil disimpan',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Profil berhasil disimpan');
     } catch (e) {
-      Get.snackbar(
-        'Gagal Menyimpan',
-        e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menyimpan: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -185,20 +158,12 @@ class ProfileController extends GetxController {
       // Hapus data lokal dari CacheService
       await _cacheService.clear();
 
-      Get.snackbar(
-        'Logout',
-        'Anda telah keluar dari aplikasi',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Anda telah keluar dari aplikasi');
 
       // Kembalikan ke halaman login
       Get.offAllNamed(Routes.LOGIN);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Gagal melakukan logout: $e',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal melakukan logout: $e');
     }
   }
 
@@ -208,29 +173,17 @@ class ProfileController extends GetxController {
     final confirmPassword = confirmPasswordController.text;
 
     if (currentPassword.isEmpty || newPassword.isEmpty || confirmPassword.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Semua kolom kata sandi harus diisi',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Semua kolom kata sandi harus diisi');
       return;
     }
 
     if (newPassword.length < 8) {
-      Get.snackbar(
-        'Error',
-        'Kata sandi baru minimal harus 8 karakter',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Kata sandi baru minimal harus 8 karakter');
       return;
     }
 
     if (newPassword != confirmPassword) {
-      Get.snackbar(
-        'Error',
-        'Konfirmasi kata sandi baru tidak cocok',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Konfirmasi kata sandi baru tidak cocok');
       return;
     }
 
@@ -252,22 +205,14 @@ class ProfileController extends GetxController {
       // Jika re-autentikasi berhasil, lakukan update password
       await client.auth.updateUser(UserAttributes(password: newPassword));
 
-      Get.snackbar(
-        'Sukses',
-        'Kata sandi berhasil diperbarui',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Kata sandi berhasil diperbarui');
 
       // Kosongkan kolom input
       currentPasswordController.clear();
       newPasswordController.clear();
       confirmPasswordController.clear();
     } catch (e) {
-      Get.snackbar(
-        'Gagal Memperbarui Sandi',
-        e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memperbarui Sandi: ${e.toString().replaceAll('Exception: ', '').replaceAll('AuthException: ', '')}');
     } finally {
       isUpdatingPassword.value = false;
     }

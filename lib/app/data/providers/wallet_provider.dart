@@ -58,4 +58,13 @@ class WalletProvider {
 
     return WalletModel.fromJson(response);
   }
+
+  Future<void> deleteWallet(String id) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception("User tidak terautentikasi");
+    }
+
+    await _client.from('wallets').delete().eq('id', int.tryParse(id) ?? id);
+  }
 }

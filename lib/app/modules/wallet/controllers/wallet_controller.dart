@@ -4,6 +4,9 @@ import 'package:lifesync_app/app/data/models/wallet_model.dart';
 import 'package:lifesync_app/app/data/providers/wallet_provider.dart';
 import 'package:lifesync_app/app/data/models/transaction_model.dart';
 import 'package:lifesync_app/app/data/providers/transaction_provider.dart';
+import 'package:lifesync_app/app/data/models/category_model.dart';
+import 'package:lifesync_app/app/data/providers/category_provider.dart';
+import 'package:lifesync_app/core/utils/ui_helper.dart';
 
 class WalletController extends GetxController {
   final WalletProvider _walletProvider = WalletProvider();
@@ -12,10 +15,19 @@ class WalletController extends GetxController {
   // State reaktif
   final wallets = <WalletModel>[].obs;
   final transactions = <TransactionModel>[].obs;
+  final categories = <CategoryModel>[].obs;
   final isLoading = false.obs;
   final currentCarouselIndex = 0.obs;
   final selectedFilter = 'Semua'.obs;
   final searchQuery = ''.obs;
+
+  // Filter for TransactionView
+  final selectedDateFilter = 'Semua'.obs; // Semua, Hari Ini, 1 Minggu, Bulan Ini, Pilih Tanggal
+  final customDateFilter = Rxn<DateTime>();
+  final selectedCategoryFilter = ''.obs; // empty = all
+
+  final isEditMode = false.obs;
+  final editWalletId = RxnInt();
 
   // Total bulanan
   final totalIncomeThisMonth = 0.0.obs;
@@ -51,19 +63,26 @@ class WalletController extends GetxController {
   Future<void> refreshData() async {
     try {
       isLoading.value = true;
-      // Muat data dompet dan transaksi secara paralel
+      // Muat data dompet, transaksi, dan kategori secara paralel
       await Future.wait([
         loadWalletsSilent(),
         loadTransactionsSilent(),
+        loadCategoriesSilent(),
       ]);
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Memuat Data',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memuat Data: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> loadCategoriesSilent() async {
+    try {
+      final categoryProvider = CategoryProvider();
+      final fetched = await categoryProvider.fetchFinanceCategories();
+      categories.assignAll(fetched);
+    } catch (_) {
+      // silent fail — categories are optional for filter
     }
   }
 
@@ -83,11 +102,7 @@ class WalletController extends GetxController {
       isLoading.value = true;
       await loadWalletsSilent();
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Memuat Dompet',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memuat Dompet: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -98,11 +113,7 @@ class WalletController extends GetxController {
       isLoading.value = true;
       await loadTransactionsSilent();
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Memuat Transaksi',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memuat Transaksi: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -161,32 +172,40 @@ class WalletController extends GetxController {
 
       await _transactionProvider.deleteTransaction(id);
       await refreshData();
-      Get.rawSnackbar(
-        title: 'Sukses',
-        message: 'Transaksi berhasil dihapus',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Transaksi berhasil dihapus');
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Menghapus Transaksi',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menghapus Transaksi: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
   }
 
-  Future<void> addNewWallet() async {
+  void prepareEditForm(WalletModel wallet) {
+    isEditMode.value = true;
+    editWalletId.value = wallet.id;
+    walletNameController.text = wallet.name ?? '';
+    initialBalanceController.text = wallet.balance?.toStringAsFixed(0) ?? '0';
+    selectedColorHex.value = wallet.colorHex ?? '1E3A8A';
+    previewName.value = (wallet.name ?? 'NAMA DOMPET').toUpperCase();
+    previewBalance.value = wallet.balance?.toStringAsFixed(0) ?? '0';
+  }
+
+  void prepareCreateForm() {
+    isEditMode.value = false;
+    editWalletId.value = null;
+    walletNameController.clear();
+    initialBalanceController.clear();
+    selectedColorHex.value = '1E3A8A';
+    previewName.value = 'NAMA DOMPET';
+    previewBalance.value = '0';
+  }
+
+  Future<void> saveWallet() async {
     final name = walletNameController.text.trim();
     final balanceText = initialBalanceController.text.trim();
 
     if (name.isEmpty) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Nama dompet tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Nama dompet tidak boleh kosong');
       return;
     }
 
@@ -195,15 +214,29 @@ class WalletController extends GetxController {
     try {
       isLoading.value = true;
 
-      final newWallet = WalletModel(
-        name: name,
-        type: 'Personal', // Default type
-        icon: 'wallet',    // Default icon
-        colorHex: selectedColorHex.value,
-        balance: balance,
-      );
+      if (isEditMode.value) {
+        if (editWalletId.value == null) return;
+        final existingWallet = wallets.firstWhereOrNull((w) => w.id == editWalletId.value);
+        if (existingWallet == null) return;
+        
+        final updatedWallet = existingWallet.copyWith(
+          name: name,
+          colorHex: selectedColorHex.value,
+          balance: balance,
+        );
+        await _walletProvider.updateWallet(updatedWallet);
+      } else {
+        final newWallet = WalletModel(
+          name: name,
+          type: 'Personal', // Default type
+          icon: 'wallet',    // Default icon
+          colorHex: selectedColorHex.value,
+          balance: balance,
+        );
+        await _walletProvider.createWallet(newWallet);
+      }
 
-      await _walletProvider.createWallet(newWallet);
+      final wasEditMode = isEditMode.value;
 
       // Reset form
       walletNameController.clear();
@@ -211,22 +244,44 @@ class WalletController extends GetxController {
       selectedColorHex.value = '1E3A8A';
       previewName.value = 'NAMA DOMPET';
       previewBalance.value = '0';
+      isEditMode.value = false;
+      editWalletId.value = null;
 
       // Reload data & kembali ke halaman sebelumnya
       await refreshData();
       Get.back();
 
-      Get.rawSnackbar(
-        title: 'Sukses',
-        message: 'Dompet baru berhasil ditambahkan',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar(wasEditMode ? 'Dompet berhasil diperbarui' : 'Dompet baru berhasil ditambahkan');
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Menyimpan Dompet',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menyimpan Dompet: ${e.toString().replaceAll('Exception: ', '')}');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> addNewWallet() async {
+    await saveWallet();
+  }
+
+  Future<void> deleteWallet(int id) async {
+    try {
+      isLoading.value = true;
+      await _walletProvider.deleteWallet(id.toString());
+      
+      // Reset form
+      walletNameController.clear();
+      initialBalanceController.clear();
+      selectedColorHex.value = '1E3A8A';
+      previewName.value = 'NAMA DOMPET';
+      previewBalance.value = '0';
+      isEditMode.value = false;
+      editWalletId.value = null;
+
+      await refreshData();
+      Get.back();
+      UIHelper.showSuccessSnackbar('Dompet berhasil dihapus');
+    } catch (e) {
+      UIHelper.showErrorSnackbar('Gagal Menghapus Dompet: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }

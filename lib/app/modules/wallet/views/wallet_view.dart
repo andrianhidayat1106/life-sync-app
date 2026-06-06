@@ -90,6 +90,11 @@ class WalletView extends GetView<WalletController> {
 
   @override
   Widget build(BuildContext context) {
+    // Refresh data whenever this page comes into view (e.g. after transaction create/edit)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      controller.refreshData();
+    });
+
     final List<String> months = [
       'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
@@ -216,7 +221,7 @@ class WalletView extends GetView<WalletController> {
                   return true;
                 }).toList();
 
-                if (filteredList.length > 4) {
+                if (filteredList.isNotEmpty) {
                   return Center(
                     child: TextButton(
                       onPressed: () => Get.toNamed('/wallet/transaction'),
@@ -266,7 +271,10 @@ class WalletView extends GetView<WalletController> {
         itemBuilder: (context, index) {
           if (index == wallets.length) {
             return GestureDetector(
-              onTap: () => Get.toNamed('/wallet/create'),
+              onTap: () {
+                controller.prepareCreateForm();
+                Get.toNamed('/wallet/create');
+              },
               child: _buildAddNewWalletCard(),
             );
           }
@@ -286,6 +294,8 @@ class WalletView extends GetView<WalletController> {
             child: GestureDetector(
               onTap: () {
                 controller.currentCarouselIndex.value = index;
+                controller.prepareEditForm(wallet);
+                Get.toNamed('/wallet/create');
               },
               child: WalletCardWidget(
                 title: (wallet.name ?? '').toUpperCase(),

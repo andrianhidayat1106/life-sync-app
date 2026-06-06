@@ -105,20 +105,27 @@ class LoginView extends GetView<LoginController> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      TextField(
-                        controller: controller.passwordController,
-                        obscureText: true,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        decoration: const InputDecoration(
-                          hintText: '••••••••',
-                          prefixIcon: Icon(Icons.lock_outline, size: 20),
-                          suffixIcon: Icon(
-                            Icons.visibility_off_outlined,
-                            size: 20,
-                            color: AppColors.textSecondary,
+                      Obx(
+                        () => TextField(
+                          controller: controller.passwordController,
+                          obscureText: !controller.isPasswordVisible.value,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: '••••••••',
+                            prefixIcon: const Icon(Icons.lock_outline, size: 20),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                controller.isPasswordVisible.value
+                                    ? Icons.visibility_outlined
+                                    : Icons.visibility_off_outlined,
+                                size: 20,
+                                color: AppColors.textSecondary,
+                              ),
+                              onPressed: controller.togglePasswordVisibility,
+                            ),
                           ),
                         ),
                       ),

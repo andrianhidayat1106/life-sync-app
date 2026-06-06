@@ -5,6 +5,8 @@ import 'package:lifesync_app/app/data/providers/task_provider.dart';
 import 'package:lifesync_app/app/data/models/category_model.dart';
 import 'package:lifesync_app/app/data/providers/category_provider.dart';
 import 'package:lifesync_app/core/services/cache_service.dart';
+import 'package:lifesync_app/core/utils/ui_helper.dart';
+import 'package:lifesync_app/app/modules/profile/controllers/profile_controller.dart';
 
 class TaskController extends GetxController {
   final TaskProvider _taskProvider = TaskProvider();
@@ -54,11 +56,7 @@ class TaskController extends GetxController {
         fetchTasks(),
       ]);
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Memuat Data',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memuat Data: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -120,26 +118,10 @@ class TaskController extends GetxController {
   }
 
   Future<void> selectDateFromPicker(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
+    final DateTime? picked = await UIHelper.showCustomDatePicker(
       initialDate: selectedDate.value,
       firstDate: DateTime(2020),
       lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF065F46),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF065F46)),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       selectDate(picked);
@@ -185,26 +167,10 @@ class TaskController extends GetxController {
   }
 
   Future<void> selectFormDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
+    final DateTime? picked = await UIHelper.showCustomDatePicker(
       initialDate: selectedFormDueDate.value ?? DateTime.now(),
       firstDate: DateTime(2020),
       lastDate: DateTime(2101),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF065F46),
-              onPrimary: Colors.white,
-              onSurface: Colors.black,
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: const Color(0xFF065F46)),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
     if (picked != null) {
       selectedFormDueDate.value = picked;
@@ -214,29 +180,17 @@ class TaskController extends GetxController {
   Future<void> saveTask() async {
     final title = titleController.text.trim();
     if (title.isEmpty) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Judul tugas tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Judul tugas tidak boleh kosong');
       return;
     }
 
     if (selectedFormCategoryId.value.isEmpty) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Kategori tugas tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Kategori tugas tidak boleh kosong');
       return;
     }
 
     if (selectedFormDueDate.value == null) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Tenggat waktu harus diisi',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Tenggat waktu harus diisi');
       return;
     }
 
@@ -275,17 +229,9 @@ class TaskController extends GetxController {
       await fetchTasks(); // Refresh tasks
 
       Get.back();
-      Get.rawSnackbar(
-        title: 'Sukses',
-        message: isEditMode.value ? 'Tugas berhasil diperbarui' : 'Tugas berhasil ditambahkan',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar(isEditMode.value ? 'Tugas berhasil diperbarui' : 'Tugas berhasil ditambahkan');
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Menyimpan Tugas',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menyimpan Tugas: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -298,17 +244,9 @@ class TaskController extends GetxController {
       await _taskProvider.deleteTask(editTaskId.value);
       tasks.removeWhere((t) => t.id == editTaskId.value);
       Get.back();
-      Get.rawSnackbar(
-        title: 'Sukses',
-        message: 'Tugas berhasil dihapus',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Tugas berhasil dihapus');
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Menghapus Tugas',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menghapus Tugas: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -383,8 +321,8 @@ class TaskController extends GetxController {
     return tasksForSelectedDate.where((t) => isTaskCompletedOnDate(t, D)).length;
   }
 
-  Future<void> toggleTaskCompletion(TaskModel task) async {
-    final D = selectedDate.value;
+  Future<void> toggleTaskCompletion(TaskModel task, {DateTime? customDate}) async {
+    final D = customDate ?? selectedDate.value;
     final currentlyCompleted = isTaskCompletedOnDate(task, D);
     
     final isCompleted = !currentlyCompleted;
@@ -410,19 +348,27 @@ class TaskController extends GetxController {
       await _taskProvider.updateTask(updatedTask);
     } catch (e) {
       tasks[index] = oldTask;
-      Get.rawSnackbar(
-        title: 'Gagal Memperbarui Tugas',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memperbarui Tugas: ${e.toString().replaceAll('Exception: ', '')}');
     }
   }
 
   String getUserFullName() {
+    if (Get.isRegistered<ProfileController>()) {
+      final pc = Get.find<ProfileController>();
+      if (pc.fullName.value.isNotEmpty) {
+        return pc.fullName.value;
+      }
+    }
     return _cacheService.read<String>('user_fullname') ?? 'Pengguna';
   }
 
   String getUserAvatarUrl() {
+    if (Get.isRegistered<ProfileController>()) {
+      final pc = Get.find<ProfileController>();
+      if (pc.profileImagePath.value.isNotEmpty) {
+        return pc.profileImagePath.value;
+      }
+    }
     return _cacheService.read<String>('user_profile_picture') ?? '';
   }
 

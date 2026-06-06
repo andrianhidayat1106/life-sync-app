@@ -41,7 +41,7 @@ class ProjectModel {
       if (userId != null) 'user_id': userId,
       'name': name,
       'description': description,
-      'category_id': categoryId,
+      'category_id': (categoryId != null && categoryId!.isNotEmpty) ? categoryId : null,
       'priority': priority,
       if (deadline != null) 'deadline': deadline?.toUtc().toIso8601String(),
     };

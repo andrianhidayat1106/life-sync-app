@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lifesync_app/app/data/models/user_model.dart';
 import 'package:lifesync_app/app/data/providers/register_provider.dart';
 import 'package:lifesync_app/app/routes/app_pages.dart';
+import 'package:lifesync_app/core/utils/ui_helper.dart';
 
 class RegisterController extends GetxController {
   final RegisterProvider _registerProvider = RegisterProvider();
@@ -12,6 +13,9 @@ class RegisterController extends GetxController {
   final passwordController = TextEditingController();
 
   final isLoading = false.obs;
+  final isPasswordVisible = false.obs;
+
+  void togglePasswordVisibility() => isPasswordVisible.value = !isPasswordVisible.value;
 
   Future<void> register() async {
     final fullName = fullNameController.text.trim();
@@ -19,11 +23,7 @@ class RegisterController extends GetxController {
     final password = passwordController.text;
 
     if (fullName.isEmpty || email.isEmpty || password.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Semua field harus diisi',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Semua field harus diisi');
       return;
     }
 
@@ -32,20 +32,12 @@ class RegisterController extends GetxController {
       final user = UserModel(fullName: fullName, email: email, password: password);
       await _registerProvider.register(user);
 
-      Get.snackbar(
-        'Sukses',
-        'Registrasi berhasil. Silakan login.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Registrasi berhasil. Silakan login.');
 
       // Redirect ke halaman login setelah registrasi sukses
       Get.offNamed(Routes.LOGIN);
     } catch (e) {
-      Get.snackbar(
-        'Registrasi Gagal',
-        e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar(e.toString().replaceAll('Exception: ', ''));
     } finally {
       isLoading.value = false;
     }

@@ -24,14 +24,14 @@ class WalletFormView extends GetView<WalletController> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Tambah Dompet Baru',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: AppColors.textPrimary,
-          ),
-        ),
+        title: Obx(() => Text(
+              controller.isEditMode.value ? 'Edit Dompet' : 'Tambah Dompet Baru',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: AppColors.textPrimary,
+              ),
+            )),
         centerTitle: true,
       ),
       body: SafeArea(
@@ -181,15 +181,18 @@ class WalletFormView extends GetView<WalletController> {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: Obx(
-            () => ElevatedButton(
+    return Obx(() {
+      final isEdit = controller.isEditMode.value;
+      final walletId = controller.editWalletId.value;
+
+      return Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
               onPressed: controller.isLoading.value
                   ? null
-                  : () => controller.addNewWallet(),
+                  : () => controller.saveWallet(),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 padding: const EdgeInsets.symmetric(vertical: 18),
@@ -199,7 +202,9 @@ class WalletFormView extends GetView<WalletController> {
                 elevation: 0,
               ),
               child: Text(
-                controller.isLoading.value ? 'Menyimpan...' : 'Simpan Dompet',
+                controller.isLoading.value
+                    ? 'Menyimpan...'
+                    : (isEdit ? 'Simpan Perubahan' : 'Simpan Dompet'),
                 style: const TextStyle(
                   fontWeight: FontWeight.bold,
                   color: Colors.white,
@@ -208,8 +213,55 @@ class WalletFormView extends GetView<WalletController> {
               ),
             ),
           ),
-        ),
-      ],
-    );
+          if (isEdit && walletId != null) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: controller.isLoading.value
+                    ? null
+                    : () {
+                        // Show confirmation dialog before deleting
+                        Get.dialog(
+                          AlertDialog(
+                            title: const Text('Hapus Dompet'),
+                            content: const Text('Apakah Anda yakin ingin menghapus dompet ini? Semua data transaksi terkait juga akan dihapus.'),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Get.back(),
+                                child: const Text('Batal', style: TextStyle(color: AppColors.textSecondary)),
+                              ),
+                              TextButton(
+                                onPressed: () {
+                                  Get.back();
+                                  controller.deleteWallet(walletId);
+                                },
+                                child: const Text('Hapus', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  side: const BorderSide(color: AppColors.error, width: 1.5),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                child: const Text(
+                  'Hapus Dompet',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.error,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      );
+    });
   }
 }

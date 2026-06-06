@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lifesync_app/app/modules/project/controllers/project_controller.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/utils/ui_helper.dart';
 
 class ProjectFormView extends GetView<ProjectController> {
   const ProjectFormView({super.key});
@@ -11,22 +12,57 @@ class ProjectFormView extends GetView<ProjectController> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor:
-            AppColors.background, // Menyelaraskan background AppBar
+        backgroundColor: AppColors.background,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: AppColors.textPrimary),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Text(
-          'Proyek Baru',
-          style: TextStyle(
+        title: Obx(() => Text(
+          controller.isEditMode.value ? 'Edit Proyek' : 'Proyek Baru',
+          style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 18,
             color: AppColors.textPrimary,
           ),
-        ),
+        )),
         centerTitle: true,
+        actions: [
+          Obx(() {
+            if (controller.isEditMode.value) {
+              return IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                onPressed: () {
+                  Get.dialog(
+                    AlertDialog(
+                      title: const Text('Hapus Proyek'),
+                      content: const Text(
+                        'Apakah Anda yakin ingin menghapus proyek ini? Semua tugas di dalamnya juga akan terhapus secara permanen.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Get.back(),
+                          child: const Text('Batal'),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            Get.back();
+                            controller.deleteProjectFromForm();
+                          },
+                          child: const Text(
+                            'Hapus',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            }
+            return const SizedBox.shrink();
+          }),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -34,15 +70,15 @@ class ProjectFormView extends GetView<ProjectController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Buat Proyek Baru',
-                style: TextStyle(
+              Obx(() => Text(
+                controller.isEditMode.value ? 'Ubah Proyek' : 'Buat Proyek Baru',
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                   letterSpacing: -0.5,
                 ),
-              ),
+              )),
               const SizedBox(height: 8),
               const Text(
                 'Rencanakan langkah besar Anda berikutnya dengan detail yang terstruktur.',
@@ -57,8 +93,9 @@ class ProjectFormView extends GetView<ProjectController> {
               // Form Utama
               _buildLabel('Nama Proyek'),
               const SizedBox(height: 8),
-              const TextField(
-                decoration: InputDecoration(
+              TextField(
+                controller: controller.nameController,
+                decoration: const InputDecoration(
                   hintText: 'Contoh: Renovasi Kantor Pusat',
                 ),
               ),
@@ -66,9 +103,10 @@ class ProjectFormView extends GetView<ProjectController> {
 
               _buildLabel('Deskripsi'),
               const SizedBox(height: 8),
-              const TextField(
+              TextField(
+                controller: controller.descriptionController,
                 maxLines: 3,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Tuliskan tujuan utama dan lingkup proyek ini...',
                   alignLabelWithHint: true,
                 ),
@@ -78,22 +116,39 @@ class ProjectFormView extends GetView<ProjectController> {
               // Kategori
               _buildLabel('Kategori'),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _buildTag('Pekerjaan', true),
-                  _buildTag('Pribadi', false),
-                  _buildTag('Keuangan', false),
-                  _buildTag('Kesehatan', false),
-                ],
-              ),
+              Obx(() {
+                if (controller.categories.isEmpty) {
+                  return const Text(
+                    'Tidak ada kategori general tersedia.',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  );
+                }
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: controller.categories.map((cat) {
+                    final isSelected =
+                        controller.selectedFormCategoryId.value == cat.id;
+                    return GestureDetector(
+                      onTap: () {
+                        controller.selectedFormCategoryId.value = cat.id ?? '';
+                      },
+                      child: _buildTag(
+                        cat.name,
+                        _getIconData(cat.icon),
+                        isSelected,
+                        _parseColor(cat.colorHex),
+                      ),
+                    );
+                  }).toList(),
+                );
+              }),
               const SizedBox(height: 32),
 
               // Prioritas
               _buildLabel('Prioritas'),
               const SizedBox(height: 12),
-              Container(
+              Obx(() => Container(
                 decoration: BoxDecoration(
                   color: AppColors.surfaceContainer,
                   borderRadius: BorderRadius.circular(12),
@@ -101,38 +156,81 @@ class ProjectFormView extends GetView<ProjectController> {
                 padding: const EdgeInsets.all(4),
                 child: Row(
                   children: [
-                    Expanded(child: _buildPriorityOption('Rendah', false)),
-                    Expanded(child: _buildPriorityOption('Sedang', true)),
-                    Expanded(child: _buildPriorityOption('Tinggi', false)),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => controller.selectedPriority.value = 'low',
+                        child: _buildPriorityOption(
+                          'Rendah',
+                          controller.selectedPriority.value == 'low',
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () =>
+                            controller.selectedPriority.value = 'medium',
+                        child: _buildPriorityOption(
+                          'Sedang',
+                          controller.selectedPriority.value == 'medium',
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => controller.selectedPriority.value = 'high',
+                        child: _buildPriorityOption(
+                          'Tinggi',
+                          controller.selectedPriority.value == 'high',
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ),
+              )),
               const SizedBox(height: 32),
 
               // Tenggat Waktu
               _buildLabel('Tenggat Waktu'),
               const SizedBox(height: 12),
-              const TextField(
-                readOnly: true,
-                decoration: InputDecoration(
-                  hintText: 'mm/dd/yyyy',
-                  suffixIcon: Icon(
-                    Icons.calendar_today_outlined,
-                    size: 20,
-                    color: AppColors.textSecondary,
+              Obx(() {
+                final date = controller.selectedFormDeadline.value;
+                final dateText = date != null
+                    ? "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}"
+                    : "";
+                return TextField(
+                  readOnly: true,
+                  controller: TextEditingController(text: dateText),
+                  onTap: () async {
+                    final picked = await UIHelper.showCustomDatePicker(
+                      initialDate: date ?? DateTime.now(),
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime(2100),
+                    );
+                    if (picked != null) {
+                      controller.selectedFormDeadline.value = picked;
+                    }
+                  },
+                  decoration: const InputDecoration(
+                    hintText: 'dd/mm/yyyy',
+                    suffixIcon: Icon(
+                      Icons.calendar_today_outlined,
+                      size: 20,
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ),
+                );
+              }),
               const SizedBox(height: 32),
 
               // SEKSI TUGAS AWAL
-              Container(
+              Obx(() => Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors
-                      .white, // Putih konvensional untuk kartu/kontainer di atas background abu-abu
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                  border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -162,7 +260,9 @@ class ProjectFormView extends GetView<ProjectController> {
                             style: TextStyle(
                               fontSize: 10,
                               fontWeight: FontWeight.bold,
-                              color: AppColors.textSecondary.withOpacity(0.8),
+                              color: AppColors.textSecondary.withValues(
+                                alpha: 0.8,
+                              ),
                             ),
                           ),
                         ),
@@ -170,17 +270,43 @@ class ProjectFormView extends GetView<ProjectController> {
                     ),
                     const SizedBox(height: 20),
 
-                    _buildInitialTaskField(
-                      hint: 'Langkah pertama...',
-                      showDelete: true,
-                    ),
+                    if (controller.formSubTasks.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20.0),
+                        child: Text(
+                          'Belum ada tugas tambahan. Klik tombol di bawah untuk menambah.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: AppColors.textSecondary.withValues(alpha: 0.7),
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      )
+                    else
+                      ListView.separated(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemCount: controller.formSubTasks.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final subtask = controller.formSubTasks[index];
+                          return _buildInitialTaskField(
+                            index: index,
+                            subtask: subtask,
+                          );
+                        },
+                      ),
+
                     const SizedBox(height: 20),
 
                     // Tombol Tambah Baris Baru
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          controller.addSubTaskField();
+                        },
                         icon: const Icon(
                           Icons.add_circle_outline,
                           size: 20,
@@ -196,7 +322,7 @@ class ProjectFormView extends GetView<ProjectController> {
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           side: BorderSide(
-                            color: AppColors.success.withOpacity(0.5),
+                            color: AppColors.success.withValues(alpha: 0.5),
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -206,34 +332,45 @@ class ProjectFormView extends GetView<ProjectController> {
                     ),
                   ],
                 ),
-              ),
+              )),
               const SizedBox(height: 48),
 
               // Tombol Aksi Akhir
-              // Tombol Aksi Akhir
-              SizedBox(
+              Obx(() => SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : () => controller.saveProject(),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors
-                        .primary, // Sekarang menggunakan Slate-900 (Primary)
+                    backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     elevation: 0,
                   ),
-                  child: const Text(
-                    'Simpan Proyek',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors
-                          .white, // Teks putih agar kontras di atas warna gelap
-                    ),
-                  ),
+                  child: controller.isLoading.value
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : Text(
+                          controller.isEditMode.value
+                              ? 'Simpan Perubahan'
+                              : 'Simpan Proyek',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
-              ),
+              )),
 
               const SizedBox(height: 40),
             ],
@@ -254,23 +391,77 @@ class ProjectFormView extends GetView<ProjectController> {
     );
   }
 
-  Widget _buildTag(String label, bool isSelected) {
+  Color _parseColor(String? colorHex) {
+    if (colorHex == null) return const Color(0xFF6B7280);
+    String hex = colorHex.replaceAll('#', '');
+    if (hex.length == 6) {
+      hex = 'FF$hex';
+    }
+    if (hex.length == 8) {
+      return Color(int.parse(hex, radix: 16));
+    }
+    return const Color(0xFF6B7280);
+  }
+
+  IconData _getIconData(String? iconName) {
+    switch (iconName) {
+      case 'work':
+      case 'work_outline':
+        return Icons.work_outline;
+      case 'person':
+      case 'person_outline':
+        return Icons.person_outline;
+      case 'payments':
+      case 'payments_outlined':
+        return Icons.payments_outlined;
+      case 'medical_services':
+      case 'medical_services_outlined':
+        return Icons.medical_services_outlined;
+      case 'account_balance':
+        return Icons.account_balance;
+      case 'airplanemode_active':
+        return Icons.airplanemode_active;
+      case 'shopping_cart':
+        return Icons.shopping_cart;
+      case 'home':
+        return Icons.home;
+      case 'fitness_center':
+        return Icons.fitness_center;
+      case 'school':
+        return Icons.school;
+      default:
+        return Icons.help_outline;
+    }
+  }
+
+  Widget _buildTag(String label, IconData icon, bool isSelected, Color catColor) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: isSelected ? AppColors.success.withOpacity(0.1) : Colors.white,
+        color: isSelected ? catColor.withValues(alpha: 0.1) : Colors.white,
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
-          color: isSelected ? AppColors.success : AppColors.outline,
+          color: isSelected ? catColor : AppColors.outline,
         ),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-          color: isSelected ? AppColors.success : AppColors.textPrimary,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 16,
+            color: isSelected ? catColor : AppColors.textPrimary,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+              color: isSelected ? catColor : AppColors.textPrimary,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -279,16 +470,12 @@ class ProjectFormView extends GetView<ProjectController> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10),
       decoration: BoxDecoration(
-        color: isSelected
-            ? Colors.white
-            : Colors.transparent, // Tetap transparan jika tidak terpilih
+        color: isSelected ? Colors.white : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: AppColors.textPrimary.withOpacity(
-                    0.05,
-                  ), // Menggunakan textPrimary tipis untuk shadow
+                  color: AppColors.textPrimary.withValues(alpha: 0.05),
                   blurRadius: 4,
                   offset: const Offset(0, 2),
                 ),
@@ -309,54 +496,49 @@ class ProjectFormView extends GetView<ProjectController> {
   }
 
   Widget _buildInitialTaskField({
-    required String hint,
-    bool showDelete = true,
-    // Sediakan parameter tambahan jika statusnya dinamis dari controller, contoh:
-    // required int index,
+    required int index,
+    required ProjectSubTask subtask,
   }) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Mengganti Icon Drag menjadi Checkbox yang Sejajar
         Padding(
           padding: const EdgeInsets.only(
             top: 12.0,
-          ), // Menyelaraskan posisi vertikal dengan teks di dalam TextField
+          ),
           child: SizedBox(
             height: 24,
             width: 24,
-            child: Checkbox(
-              // Contoh implementasi reaktif dengan GetX:
-              // value: controller.initialTasks[index].isCompleted.value,
-              value: true, // Ganti dengan variabel Rx dari controller Anda
+            child: Obx(() => Checkbox(
+              value: subtask.isCompleted.value,
               onChanged: (bool? value) {
-                // Contoh aksi:
-                // controller.toggleTaskStatus(index, value);
+                if (value != null) {
+                  subtask.isCompleted.value = value;
+                }
               },
-              activeColor: AppColors.success, // Emerald-500 saat aktif
+              activeColor: AppColors.success,
               checkColor: Colors.white,
               side: const BorderSide(
-                color: AppColors.outline, // Border biru pucat saat kosong
+                color: AppColors.outline,
                 width: 1.5,
               ),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(
-                  6,
-                ), // Membuat sudut kotak sedikit membulat (modern)
+                borderRadius: BorderRadius.circular(6),
               ),
-            ),
+            )),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: TextField(
+            controller: subtask.controller,
             maxLines: null,
             keyboardType: TextInputType.multiline,
             style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
             decoration: InputDecoration(
-              hintText: hint,
+              hintText: 'Langkah berikutnya...',
               hintStyle: TextStyle(
-                color: AppColors.textSecondary.withOpacity(0.6),
+                color: AppColors.textSecondary.withValues(alpha: 0.6),
                 fontSize: 14,
               ),
               contentPadding: const EdgeInsets.symmetric(
@@ -369,26 +551,23 @@ class ProjectFormView extends GetView<ProjectController> {
                 borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
-              suffixIcon: showDelete
-                  ? Container(
-                      height: 48,
-                      alignment: Alignment.center,
-                      width: 40,
-                      child: IconButton(
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.only(right: 4.0),
-                        icon: const Icon(
-                          Icons.remove_circle_outline,
-                          size: 20,
-                          color: AppColors
-                              .error, // Menggunakan warna merah semantic
-                        ),
-                        onPressed: () {
-                          // Aksi hapus baris tugas di sini via controller
-                        },
-                      ),
-                    )
-                  : null,
+              suffixIcon: Container(
+                height: 48,
+                alignment: Alignment.center,
+                width: 40,
+                child: IconButton(
+                  constraints: const BoxConstraints(),
+                  padding: const EdgeInsets.only(right: 4.0),
+                  icon: const Icon(
+                    Icons.remove_circle_outline,
+                    size: 20,
+                    color: AppColors.error,
+                  ),
+                  onPressed: () {
+                    controller.removeSubTaskField(index);
+                  },
+                ),
+              ),
             ),
           ),
         ),

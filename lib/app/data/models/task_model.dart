@@ -49,7 +49,7 @@ class TaskModel {
       if (id != null) 'id': id,
       if (userId != null) 'user_id': userId,
       if (projectId != null) 'project_id': projectId,
-      'category_id': categoryId,
+      'category_id': (categoryId != null && categoryId!.isNotEmpty) ? categoryId : null,
       'title': title,
       'description': description,
       'priority': priority,

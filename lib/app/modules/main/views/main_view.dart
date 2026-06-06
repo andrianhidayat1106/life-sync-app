@@ -28,6 +28,8 @@ class MainView extends GetView<MainController> {
       body: Obx(() => _pages[controller.selectedIndex.value]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
+          // 1. Berikan warna putih pada Container utama agar area abu-abu tertutup putih
+          color: Colors.white,
           boxShadow: [
             BoxShadow(
               color: AppColors.primary.withValues(alpha: 0.08),
@@ -73,7 +75,7 @@ class MainView extends GetView<MainController> {
                 BottomNavigationBarItem(
                   icon: Icon(Icons.assignment_outlined),
                   activeIcon: Icon(Icons.assignment),
-                  label: 'Task',
+                  label: 'Tugas',
                 ),
                 BottomNavigationBarItem(
                   icon: Icon(Icons.task),

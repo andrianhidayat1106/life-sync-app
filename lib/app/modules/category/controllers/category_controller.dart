@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lifesync_app/app/data/models/category_model.dart';
 import 'package:lifesync_app/app/data/providers/category_provider.dart';
+import 'package:lifesync_app/core/utils/ui_helper.dart';
 
 class CategoryController extends GetxController {
   final CategoryProvider _categoryProvider = CategoryProvider();
@@ -46,11 +47,7 @@ class CategoryController extends GetxController {
       final fetched = await _categoryProvider.fetchAllCategories();
       categories.assignAll(fetched);
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Memuat Kategori',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Memuat Kategori: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }
@@ -83,11 +80,7 @@ class CategoryController extends GetxController {
   Future<void> saveCategory() async {
     final name = nameController.text.trim();
     if (name.isEmpty) {
-      Get.rawSnackbar(
-        title: 'Validasi Gagal',
-        message: 'Nama kategori tidak boleh kosong',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Nama kategori tidak boleh kosong');
       return;
     }
 
@@ -114,19 +107,9 @@ class CategoryController extends GetxController {
       await loadCategories();
       Get.back();
 
-      Get.rawSnackbar(
-        title: 'Sukses',
-        message: isEditMode.value
-            ? 'Kategori berhasil diperbarui'
-            : 'Kategori berhasil ditambahkan',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar(isEditMode.value ? 'Kategori berhasil diperbarui' : 'Kategori berhasil ditambahkan');
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Menyimpan Kategori',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menyimpan Kategori: ${e.toString().replaceAll('Exception: ', '')}');
 
       print(e);
     } finally {
@@ -142,17 +125,9 @@ class CategoryController extends GetxController {
 
       Get.back(); // Kembali dari form page
 
-      Get.rawSnackbar(
-        title: 'Sukses',
-        message: 'Kategori berhasil dihapus',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showSuccessSnackbar('Kategori berhasil dihapus');
     } catch (e) {
-      Get.rawSnackbar(
-        title: 'Gagal Menghapus Kategori',
-        message: e.toString().replaceAll('Exception: ', ''),
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      UIHelper.showErrorSnackbar('Gagal Menghapus Kategori: ${e.toString().replaceAll('Exception: ', '')}');
     } finally {
       isLoading.value = false;
     }

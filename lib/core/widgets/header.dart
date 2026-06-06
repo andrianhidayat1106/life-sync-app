@@ -8,14 +8,18 @@ import '../../../../core/constants/app_colors.dart';
 
 class Header extends StatelessWidget {
   final String title;
+  final String? profileImagePath;
 
-  const Header({super.key, required this.title});
+  const Header({
+    super.key,
+    required this.title,
+    this.profileImagePath,
+  });
 
   @override
   Widget build(BuildContext context) {
     final cacheService = Get.find<CacheService>();
-    final cachedName = cacheService.read<String>('user_fullname') ?? title;
-    final cachedImagePath = cacheService.read<String>('user_profile_picture') ?? '';
+    final cachedImagePath = profileImagePath ?? cacheService.read<String>('user_profile_picture') ?? '';
 
     Widget profileImage;
     if (cachedImagePath.isNotEmpty && File(cachedImagePath).existsSync()) {
@@ -50,7 +54,7 @@ class Header extends StatelessWidget {
                   profileImage,
                   const SizedBox(width: 12),
                   Text(
-                    cachedName,
+                    title,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,

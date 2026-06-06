@@ -23,10 +23,7 @@ class ProjectProvider {
           .timeout(const Duration(seconds: 10));
       print("[ProjectProvider] fetchProjects: client response received. Type: ${response.runtimeType}");
 
-      if (response == null) {
-        print("[ProjectProvider] fetchProjects: response is null");
-        return [];
-      }
+
 
       final list = response as List;
       print("[ProjectProvider] fetchProjects: received list of length ${list.length}");
@@ -74,6 +71,24 @@ class ProjectProvider {
     final response = await _client
         .from('projects')
         .insert(data)
+        .select()
+        .single();
+
+    return ProjectModel.fromJson(response);
+  }
+
+  Future<ProjectModel> updateProject(ProjectModel project) async {
+    final user = _client.auth.currentUser;
+    if (user == null) {
+      throw Exception("User tidak terautentikasi");
+    }
+
+    final data = project.toJson();
+
+    final response = await _client
+        .from('projects')
+        .update(data)
+        .eq('id', project.id!)
         .select()
         .single();
 

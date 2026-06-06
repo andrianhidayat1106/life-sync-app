@@ -3,16 +3,14 @@ import 'package:lifesync_app/app/modules/category/views/category_form_view.dart'
 import 'package:lifesync_app/app/modules/profile/views/profile_setting_view.dart';
 import 'package:lifesync_app/app/modules/project/views/project_form_view.dart';
 import 'package:lifesync_app/app/modules/project/views/project_view.dart';
+import 'package:lifesync_app/app/modules/splash/views/splash_view.dart';
 import 'package:lifesync_app/app/modules/task/views/task_form_view.dart';
-import 'package:lifesync_app/app/modules/wallet/controllers/transaction_controller.dart';
 import 'package:lifesync_app/app/modules/wallet/views/transaction_form_view.dart';
 import 'package:lifesync_app/app/modules/wallet/views/transaction_view.dart';
 import 'package:lifesync_app/app/modules/wallet/views/wallet_form_view.dart';
 import 'package:lifesync_app/core/middleware/auth_middleware.dart';
 
 import '../modules/category/bindings/category_binding.dart';
-import '../modules/category/bindings/category_binding.dart';
-import '../modules/category/views/category_view.dart';
 import '../modules/category/views/category_view.dart';
 import '../modules/home/bindings/home_binding.dart';
 import '../modules/home/views/home_view.dart';
@@ -25,7 +23,6 @@ import '../modules/notification/views/notification_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/project/bindings/project_binding.dart';
-import '../modules/project/views/project_form_view.dart';
 import '../modules/register/bindings/register_binding.dart';
 import '../modules/register/views/register_view.dart';
 import '../modules/task/bindings/task_binding.dart';
@@ -38,9 +35,14 @@ part 'app_routes.dart';
 class AppPages {
   AppPages._();
 
-  static const INITIAL = Routes.MAIN;
+  static const INITIAL = Routes.SPLASH;
 
   static final routes = [
+    GetPage(
+      name: _Paths.SPLASH,
+      page: () => const SplashView(),
+      // no middleware — splash tidak perlu auth check
+    ),
     GetPage(
       name: _Paths.HOME,
       page: () => const HomeView(),

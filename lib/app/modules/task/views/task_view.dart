@@ -69,7 +69,10 @@ class _TaskViewState extends State<TaskView> {
                   left: 24,
                   right: 24,
                 ),
-                child: Header(title: controller.getUserFullName()),
+                child: Obx(() => Header(
+                      title: controller.getUserFullName(),
+                      profileImagePath: controller.getUserAvatarUrl(),
+                    )),
               ),
 
               // Calendar Navigation with DatePicker & "Hari Ini" Reset
