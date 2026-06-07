@@ -7,6 +7,7 @@ import 'package:lifesync_app/app/data/providers/category_provider.dart';
 import 'package:lifesync_app/core/services/cache_service.dart';
 import 'package:lifesync_app/core/utils/ui_helper.dart';
 import 'package:lifesync_app/app/modules/profile/controllers/profile_controller.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TaskController extends GetxController {
   final TaskProvider _taskProvider = TaskProvider();
@@ -266,25 +267,32 @@ class TaskController extends GetxController {
   // Tasks Filter
   List<TaskModel> get tasksForSelectedDate {
     final D = selectedDate.value;
+    final currentDate = DateTime(D.year, D.month, D.day);
+
     return tasks.where((task) {
-      // 1. Tampilkan jika selesai pada tanggal terpilih D
-      if (task.finishedAt != null && isSameDate(task.finishedAt!, D)) {
-        return true;
+      // Menentukan tanggal mulai (start date) task ini.
+      // Prioritaskan createdAt, jika null gunakan dueDate.
+      final start = task.createdAt ?? task.dueDate;
+      if (start == null) return false;
+
+      final startDate = DateTime(start.year, start.month, start.day);
+
+      // 1. Task tidak akan muncul di hari sebelum ia dibuat
+      if (currentDate.isBefore(startDate)) {
+        return false;
       }
 
-      if (task.dueDate == null) return false;
-      final due = task.dueDate!;
-
-      // 2. Tampilkan jika jatuh tempo pada tanggal terpilih D
-      if (isSameDate(due, D)) {
-        return true;
+      // 2. Jika task sudah selesai, task TIDAK muncul di hari-hari setelah ia diselesaikan.
+      // (Artinya: ia akan muncul dari hari ia dibuat, sampai hari ia diselesaikan)
+      if (task.finishedAt != null) {
+        final finishedDate = DateTime(task.finishedAt!.year, task.finishedAt!.month, task.finishedAt!.day);
+        if (currentDate.isAfter(finishedDate)) {
+          return false;
+        }
       }
 
-      // 3. Tampilkan jika jatuh tempo sebelum D (backlog) dan belum selesai saat hari D dimulai
-      if (isBeforeDate(due, D)) {
-        return task.finishedAt == null || !isBeforeDate(task.finishedAt!, D);
-      }
-      return false;
+      // Jika lolos kedua kondisi di atas, tampilkan task ini.
+      return true;
     }).toList();
   }
 
@@ -359,6 +367,16 @@ class TaskController extends GetxController {
         return pc.fullName.value;
       }
     }
+    
+    // Coba ambil dari auth session jika ada (saat restart aplikasi)
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null && session.user.userMetadata != null) {
+      final fullName = session.user.userMetadata!['full_name'];
+      if (fullName != null && fullName.toString().isNotEmpty) {
+        return fullName.toString();
+      }
+    }
+    
     return _cacheService.read<String>('user_fullname') ?? 'Pengguna';
   }
 

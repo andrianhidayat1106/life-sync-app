@@ -117,7 +117,10 @@ class WalletView extends GetView<WalletController> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Header(title: "User"),
+                    Obx(() => Header(
+                      title: controller.getUserFullName(),
+                      profileImagePath: controller.getUserAvatarUrl(),
+                    )),
                     const SizedBox(height: 32),
                     const Text(
                       'Dompet Saya',

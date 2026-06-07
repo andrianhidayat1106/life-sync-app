@@ -35,12 +35,18 @@ class ProfileView extends GetView<ProfileController> {
                   onTap: () => Get.toNamed(Routes.PROFILE + '/setting'),
                 ),
 
-                _buildSettingsItem(
+                Obx(() => _buildSettingsItem(
                   icon: Icons.notifications_none,
                   title: 'Preferensi Notifikasi',
-                  badge: '3',
-                  onTap: () => Get.toNamed(Routes.NOTIFICATION),
-                ),
+                  badge: controller.unreadNotificationCount.value > 0 
+                      ? controller.unreadNotificationCount.value.toString() 
+                      : null,
+                  onTap: () {
+                    Get.toNamed(Routes.NOTIFICATION)?.then((_) {
+                      controller.fetchUnreadNotificationCount();
+                    });
+                  },
+                )),
               ]),
 
               const SizedBox(height: 32),

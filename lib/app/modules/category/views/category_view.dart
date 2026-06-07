@@ -56,7 +56,10 @@ class CategoryView extends GetView<CategoryController> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Custom Header / TopBar
-              const Header(title: "User"),
+              Obx(() => Header(
+                title: controller.getUserFullName(),
+                profileImagePath: controller.getUserAvatarUrl(),
+              )),
               const SizedBox(height: 24),
 
               // Title Section

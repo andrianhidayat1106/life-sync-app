@@ -139,11 +139,15 @@ class ProjectController extends GetxController {
     nameController.clear();
     descriptionController.clear();
     
-    if (categories.isNotEmpty) {
-      selectedFormCategoryId.value = categories.first.id ?? '';
-    } else {
-      selectedFormCategoryId.value = '';
-    }
+    fetchCategories().then((_) {
+      if (categories.isNotEmpty) {
+        if (selectedFormCategoryId.value.isEmpty || !categories.any((c) => c.id == selectedFormCategoryId.value)) {
+          selectedFormCategoryId.value = categories.first.id ?? '';
+        }
+      } else {
+        selectedFormCategoryId.value = '';
+      }
+    });
     
     selectedPriority.value = 'medium';
     selectedFormDeadline.value = null;
@@ -164,6 +168,8 @@ class ProjectController extends GetxController {
     selectedFormCategoryId.value = project.categoryId ?? '';
     selectedPriority.value = project.priority;
     selectedFormDeadline.value = project.deadline;
+    
+    fetchCategories();
     
     for (var subtask in formSubTasks) {
       subtask.dispose();

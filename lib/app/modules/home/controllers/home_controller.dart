@@ -7,6 +7,7 @@ import 'package:lifesync_app/app/modules/task/controllers/task_controller.dart';
 import 'package:lifesync_app/app/data/models/project_model.dart';
 import 'package:lifesync_app/app/data/models/task_model.dart';
 import 'package:lifesync_app/app/data/models/transaction_model.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class HomeController extends GetxController {
   final WalletController walletController = Get.find<WalletController>();
@@ -141,6 +142,16 @@ class HomeController extends GetxController {
         return pc.fullName.value;
       }
     }
+    
+    // Coba ambil dari auth session jika ada (saat restart aplikasi)
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null && session.user.userMetadata != null) {
+      final fullName = session.user.userMetadata!['full_name'];
+      if (fullName != null && fullName.toString().isNotEmpty) {
+        return fullName.toString();
+      }
+    }
+    
     return Get.find<CacheService>().read<String>('user_fullname') ?? 'Pengguna';
   }
 

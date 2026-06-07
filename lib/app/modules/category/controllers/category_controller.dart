@@ -3,6 +3,9 @@ import 'package:get/get.dart';
 import 'package:lifesync_app/app/data/models/category_model.dart';
 import 'package:lifesync_app/app/data/providers/category_provider.dart';
 import 'package:lifesync_app/core/utils/ui_helper.dart';
+import 'package:lifesync_app/app/modules/profile/controllers/profile_controller.dart';
+import 'package:lifesync_app/core/services/cache_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CategoryController extends GetxController {
   final CategoryProvider _categoryProvider = CategoryProvider();
@@ -138,5 +141,34 @@ class CategoryController extends GetxController {
     nameController.dispose();
     descriptionController.dispose();
     super.onClose();
+  }
+
+  String getUserFullName() {
+    if (Get.isRegistered<ProfileController>()) {
+      final pc = Get.find<ProfileController>();
+      if (pc.fullName.value.isNotEmpty) {
+        return pc.fullName.value;
+      }
+    }
+    
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session != null && session.user.userMetadata != null) {
+      final fullName = session.user.userMetadata!['full_name'];
+      if (fullName != null && fullName.toString().isNotEmpty) {
+        return fullName.toString();
+      }
+    }
+    
+    return Get.find<CacheService>().read<String>('user_fullname') ?? 'Pengguna';
+  }
+
+  String getUserAvatarUrl() {
+    if (Get.isRegistered<ProfileController>()) {
+      final pc = Get.find<ProfileController>();
+      if (pc.profileImagePath.value.isNotEmpty) {
+        return pc.profileImagePath.value;
+      }
+    }
+    return Get.find<CacheService>().read<String>('user_profile_picture') ?? '';
   }
 }
