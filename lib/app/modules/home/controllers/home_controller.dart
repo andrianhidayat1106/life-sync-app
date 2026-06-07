@@ -106,14 +106,25 @@ class HomeController extends GetxController {
 
   List<TaskModel> get todayTasks {
     final now = DateTime.now();
-    final todayDate = DateTime(now.year, now.month, now.day);
+    final currentDate = DateTime(now.year, now.month, now.day);
 
-    return taskController.tasks.where((t) {
-      if (t.dueDate == null) return false;
-      final due = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
-      // Semua tugas dengan due date hari ini atau sebelumnya (overdue + hari ini)
-      // Baik yang sudah selesai maupun belum — agar tidak hilang saat di-ceklis
-      return due.compareTo(todayDate) <= 0;
+    return taskController.tasks.where((task) {
+      // 1. Tentukan tanggal mulai
+      final start = task.createdAt ?? task.dueDate;
+      if (start == null) return false;
+
+      final startDate = DateTime(start.year, start.month, start.day);
+
+      // 2. Task tidak muncul di hari sebelum ia dibuat
+      if (currentDate.isBefore(startDate)) return false;
+
+      // 3. Jika sudah selesai, pastikan tidak muncul lagi di hari berikutnya
+      if (task.finishedAt != null) {
+        final finishedDate = DateTime(task.finishedAt!.year, task.finishedAt!.month, task.finishedAt!.day);
+        if (currentDate.isAfter(finishedDate)) return false;
+      }
+
+      return true;
     }).toList();
   }
 
