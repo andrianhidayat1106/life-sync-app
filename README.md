@@ -2,6 +2,12 @@
 
 LifeSync adalah aplikasi *all-in-one* yang menggabungkan manajemen produktivitas (tugas dan proyek) dengan manajemen keuangan (dompet dan transaksi). Aplikasi ini dirancang untuk membantu Anda menyeimbangkan kehidupan sehari-hari dengan memantau apa yang perlu dikerjakan dan ke mana uang Anda mengalir, semuanya dalam satu tempat yang terpusat.
 
+## 📥 Download Aplikasi (Android)
+
+Untuk pengguna Android, Anda dapat mengunduh versi terbaru dari LifeSync (APK yang sudah dilengkapi fitur anti-bobol/obfuscation) melalui link berikut:
+
+👉 **[Download LifeSync APK Terbaru di GitHub Releases](https://github.com/andrianhidayat1106/life-sync-app/releases)**
+
 ## 🌟 Fitur Utama
 
 - **Manajemen Tugas (Task Management)**: Buat, jadwalkan, dan lacak tugas harian Anda. Tugas yang belum selesai akan terus dibawa ke hari berikutnya (backlog) hingga diselesaikan.
